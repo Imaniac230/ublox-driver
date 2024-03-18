@@ -55,7 +55,9 @@ namespace UBLOX {
             if (buffer.size() < 3) return {};
 
             uint8_t ckA = 0, ckB = 0;
-            for (auto it = std::next(buffer.begin(), 2); it != buffer.end(); ++it) {
+            auto it = buffer.begin();
+            if ((*it == SyncChar::FirstByte) && (*(it + 1) == SyncChar::SecondByte)) std::advance(it, 2);
+            for (; it != buffer.end(); ++it) {
                 ckA += *it;
                 ckB += ckA;
             }

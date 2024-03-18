@@ -6,6 +6,11 @@
 namespace UBLOX {
     enum class SyncChar : uint8_t { FirstByte = 0xB5, SecondByte = 0x62 };
 
+    inline static constexpr bool operator==(const SyncChar left, const uint8_t right) {
+        return static_cast<uint8_t>(left) == right;
+    }
+    inline static constexpr bool operator==(const uint8_t left, const SyncChar right) { return right == left; }
+
     enum class MessageClass : uint8_t {
         Nav = 0x01,
         Rxm = 0x02,
@@ -23,7 +28,7 @@ namespace UBLOX {
         Hnr = 0x28,
     };
 
-    inline static constexpr uint16_t operator+(MessageClass left, uint8_t right) {
+    inline static constexpr uint16_t operator+(const MessageClass left, const uint8_t right) {
         return (static_cast<uint16_t>(left) << 8) + right;
     }
 

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <thread>
 
-#include <util/Serial.h>
+#include <util/Serial.hpp>
 
 /**
  * These tests require a serial port to be available,
@@ -14,12 +14,12 @@ static constexpr auto TEST_SERIAL_1 = "/tmp/ttyV1";
 TEST(serialTests, SerialOpening) {
     const auto maybePort0 = std::getenv("TEST_SERIAL_0");
 
-    Serial validSerial((!maybePort0) ? TEST_SERIAL_0 : maybePort0, Baud115200, 5);
+    Serial validSerial((!maybePort0) ? TEST_SERIAL_0 : maybePort0, Serial::BaudRate::Baud115200, 5);
     EXPECT_GT(validSerial.getFileDescriptor(), 0);
 
     bool exceptionThrown = false;
     try {
-        Serial invalidSerial("invalid_port", Baud115200, 5);
+        Serial invalidSerial("invalid_port", Serial::BaudRate::Baud115200, 5);
     } catch (const std::runtime_error &e) { exceptionThrown = true; }
     ASSERT_TRUE(exceptionThrown);
 }
@@ -33,14 +33,14 @@ TEST(serialTests, SendReceiveBlocking) {
     int receivedMessages = 0;
 
     std::thread([&]() {
-        Serial sender((!maybePort0) ? TEST_SERIAL_0 : maybePort0, Baud115200, 5);
+        Serial sender((!maybePort0) ? TEST_SERIAL_0 : maybePort0, Serial::BaudRate::Baud115200, 5);
 
         for (int i = 0; i < testIterations; ++i) {
             ASSERT_EQ(sender.writeBytes(reinterpret_cast<const uint8_t *>(msg), strlen(msg)), strlen(msg));
         }
     }).detach();
 
-    Serial receiver((!maybePort1) ? TEST_SERIAL_1 : maybePort1, Baud115200, 5);
+    Serial receiver((!maybePort1) ? TEST_SERIAL_1 : maybePort1, Serial::BaudRate::Baud115200, 5);
     receiver.setNonBlocking(false);
 
     for (int i = 0; i < testIterations; ++i) {
@@ -63,7 +63,7 @@ TEST(serialTests, SendReceiveNonblocking) {
     int receivedMessages = 0;
 
     std::thread([&]() {
-        Serial receiver((!maybePort1) ? TEST_SERIAL_1 : maybePort1, Baud115200, 5);
+        Serial receiver((!maybePort1) ? TEST_SERIAL_1 : maybePort1, Serial::BaudRate::Baud115200, 5);
         receiver.setNonBlocking(true);
         std::vector<char> buffer(strlen(msg), 0);
 
@@ -77,7 +77,7 @@ TEST(serialTests, SendReceiveNonblocking) {
     }).detach();
 
 
-    Serial sender((!maybePort0) ? TEST_SERIAL_0 : maybePort0, Baud115200, 5);
+    Serial sender((!maybePort0) ? TEST_SERIAL_0 : maybePort0, Serial::BaudRate::Baud115200, 5);
 
     for (int i = 0; i < testIterations; ++i) {
         ASSERT_EQ(sender.writeBytes(reinterpret_cast<const uint8_t *>(msg), strlen(msg)), strlen(msg));
@@ -96,12 +96,12 @@ TEST(serialTests, ReceiveMinBytes) {
     for (int iteration = 1; iteration <= testIterations; ++iteration) {
         //Sender will send single byte messages one by one
         std::thread([&]() {
-            Serial sender((!maybePort0) ? TEST_SERIAL_0 : maybePort0, Baud115200, iteration);
+            Serial sender((!maybePort0) ? TEST_SERIAL_0 : maybePort0, Serial::BaudRate::Baud115200, iteration);
             for (int i = 0; i < iteration; ++i) { ASSERT_EQ(sender.writeBytes(&msg, 1), 1); }
         }).detach();
 
         //Receiver should block until the minimum number of bytes is received in a single read
-        Serial receiver((!maybePort1) ? TEST_SERIAL_1 : maybePort1, Baud115200, iteration);
+        Serial receiver((!maybePort1) ? TEST_SERIAL_1 : maybePort1, Serial::BaudRate::Baud115200, iteration);
         receiver.setNonBlocking(false);
         std::vector<char> buffer(iteration, 0);
 

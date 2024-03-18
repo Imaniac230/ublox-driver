@@ -3,7 +3,9 @@
 
 #include <ublox/Packet.hpp>
 
-TEST(parsing, parse) {}
+TEST(parsing, parse) {
+    //TODO: implement
+}
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);

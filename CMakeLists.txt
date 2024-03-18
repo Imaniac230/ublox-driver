@@ -35,7 +35,6 @@ target_include_directories(${core_lib_name} PUBLIC include)
 target_link_libraries(${core_lib_name} ${utils_lib_name})
 
 add_executable(${exec_name} src/main.cpp src/Driver.cpp)
-target_include_directories(${exec_name} PRIVATE ${GLIB_INCLUDE_DIRS})
 target_link_libraries(${exec_name} ${core_lib_name})
 
 # development

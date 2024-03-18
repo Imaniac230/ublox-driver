@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <util/Utils.h>
+#include <util/Utils.hpp>
 
 TEST(UtilsSerializationTest, SerializeDeserialize8) {
     const int testIterations = 100;
