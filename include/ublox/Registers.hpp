@@ -32,6 +32,54 @@ namespace UBLOX {
         return (static_cast<uint16_t>(left) << 8) + right;
     }
 
+    inline static constexpr std::ostream &operator<<(std::ostream &stream, const MessageClass messageClass) {
+        switch (messageClass) {
+            case MessageClass::Nav:
+                stream << "Nav";
+                break;
+            case MessageClass::Rxm:
+                stream << "Rxm";
+                break;
+            case MessageClass::Inf:
+                stream << "Inf";
+                break;
+            case MessageClass::Ack:
+                stream << "Ack";
+                break;
+            case MessageClass::Cfg:
+                stream << "Cfg";
+                break;
+            case MessageClass::Upd:
+                stream << "Upd";
+                break;
+            case MessageClass::Mon:
+                stream << "Mon";
+                break;
+            case MessageClass::Aid:
+                stream << "Aid";
+                break;
+            case MessageClass::Tim:
+                stream << "Tim";
+                break;
+            case MessageClass::Esf:
+                stream << "Esf";
+                break;
+            case MessageClass::Mga:
+                stream << "Mga";
+                break;
+            case MessageClass::Log:
+                stream << "Log";
+                break;
+            case MessageClass::Sec:
+                stream << "Sec";
+                break;
+            case MessageClass::Hnr:
+                stream << "Hnr";
+                break;
+        }
+        return stream;
+    }
+
     enum class Message : uint16_t {
         // Ack/Nack Messages
         AckAcknowledged = MessageClass::Ack + 0x01,
@@ -121,6 +169,7 @@ namespace UBLOX {
         // Multiple GNSS Assistance Messages
 
         // Monitoring Messages
+        MonCommunicationPortInformation = MessageClass::Mon + 0x36,
         MonDataBatchingBufferStatus = MessageClass::Mon + 0x32,
         MonGnssInformationMessage = MessageClass::Mon + 0x28,
         MonExtendedHardwareStatus = MessageClass::Mon + 0x0B,
@@ -202,6 +251,12 @@ namespace UBLOX {
     }
     inline static constexpr Message toMessage(const uint8_t messageClass, const uint8_t messageId) {
         return toMessage(static_cast<MessageClass>(messageClass), messageId);
+    }
+
+    inline static std::ostream &operator<<(std::ostream &stream, const Message message) {
+        stream << "CLASS: " << toClass(message) << ", ID: " << std::hex << "0x" << static_cast<int>(toRawId(message))
+               << std::dec;
+        return stream;
     }
 }// namespace UBLOX
 

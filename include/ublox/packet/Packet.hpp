@@ -7,12 +7,14 @@
 
 #include <util/Utils.hpp>
 
-namespace UBLOX {
-    class Packet {
+
+namespace UBLOX::Packet {
+    class Base {
     public:
         typedef std::vector<uint8_t> SerializedType;
 
-        Packet(const MessageClass messageClass, const uint8_t messageId, std::vector<uint8_t> data)
+        Base(Base &&other) noexcept : serializedContents(std::move(other.serializedContents)) {}
+        Base(const MessageClass messageClass, const uint8_t messageId, std::vector<uint8_t> data)
             : serializedContents({static_cast<uint8_t>(SyncChar::FirstByte), static_cast<uint8_t>(SyncChar::SecondByte),
                                   static_cast<uint8_t>(messageClass), messageId}) {
             const std::vector<uint8_t> length = Utils::serializeLEInt(static_cast<uint16_t>(data.size()));
@@ -21,11 +23,11 @@ namespace UBLOX {
             serializedContents.insert(serializedContents.end(), d.begin(), d.end());
             appendChecksum();
         }
-        Packet(const Message message, std::vector<uint8_t> data)
-            : Packet(toClass(message), toRawId(message), std::move(data)) {}
-        explicit Packet(const Message message) : Packet(message, {}) {}
+        Base(const Message message, std::vector<uint8_t> data)
+            : Base(toClass(message), toRawId(message), std::move(data)) {}
+        explicit Base(const Message message) : Base(message, {}) {}
 
-        virtual ~Packet() = default;
+        virtual ~Base() = default;
 
         [[nodiscard]] const SerializedType &serialized() const { return serializedContents; }
         [[nodiscard]] size_t size() const { return serializedContents.size(); }
@@ -40,7 +42,7 @@ namespace UBLOX {
         [[nodiscard]] inline Message message() const {
             return static_cast<Message>(static_cast<MessageClass>(serializedContents[2]) + serializedContents[3]);
         }
-        [[nodiscard]] inline std::vector<uint8_t> data() const {
+        [[nodiscard]] inline std::vector<uint8_t> rawData() const {
             return {serializedContents.begin() + 6, serializedContents.begin() + 6 + dataSize()};
         }
 
@@ -67,6 +69,7 @@ namespace UBLOX {
 
         SerializedType serializedContents;
     };
-}// namespace UBLOX
+}// namespace UBLOX::Packet
+
 
 #endif//PACKET_H

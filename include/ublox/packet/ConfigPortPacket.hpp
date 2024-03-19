@@ -1,10 +1,10 @@
 #ifndef CONFIGPORTPACKET_H
 #define CONFIGPORTPACKET_H
 
-#include <ublox/Packet.hpp>
+#include <ublox/packet/Packet.hpp>
 
-namespace UBLOX {
-    class ConfigPortPacket : public Packet {
+namespace UBLOX::Packet {
+    class ConfigPort : public Base {
     public:
         // Common for all ports
         //FIXME(uart-id): set these correctly according to the ublox documentation
@@ -65,32 +65,32 @@ namespace UBLOX {
             explicit PortModeI2C(const PortModeI2CRaw raw) : PortMode{*reinterpret_cast<const uint32_t *>(&raw)} {};
         };
 
-        ConfigPortPacket(const PortID id, const PortMode mode, const uint32_t baudRateBitsps,
-                         const InProtocol inProtocol, const OutProtocol outProtocol, const bool extendedTxTimeout)
-            : Packet(Message::CfgPort, {static_cast<uint8_t>(id),
-                                        0x00,
-                                        0x00,//TODO: TX ready pin config
-                                        0x00,//TODO: TX ready pin config
-                                        Utils::serializeLEInt(mode.raw)[0],
-                                        Utils::serializeLEInt(mode.raw)[1],
-                                        Utils::serializeLEInt(mode.raw)[2],
-                                        Utils::serializeLEInt(mode.raw)[3],
-                                        Utils::serializeLEInt(baudRateBitsps)[0],
-                                        Utils::serializeLEInt(baudRateBitsps)[1],
-                                        Utils::serializeLEInt(baudRateBitsps)[2],
-                                        Utils::serializeLEInt(baudRateBitsps)[3],
-                                        Utils::serializeLEInt(static_cast<uint16_t>(inProtocol))[0],
-                                        Utils::serializeLEInt(static_cast<uint16_t>(inProtocol))[1],
-                                        Utils::serializeLEInt(static_cast<uint16_t>(outProtocol))[0],
-                                        Utils::serializeLEInt(static_cast<uint16_t>(outProtocol))[1],
-                                        Utils::serializeLEInt<uint16_t>(extendedTxTimeout)[0],
-                                        Utils::serializeLEInt<uint16_t>(extendedTxTimeout)[1],
-                                        0x00,
-                                        0x00}) {}
+        ConfigPort(const PortID id, const PortMode mode, const uint32_t baudRateBitsps, const InProtocol inProtocol,
+                   const OutProtocol outProtocol, const bool extendedTxTimeout)
+            : Base(Message::CfgPort, {static_cast<uint8_t>(id),
+                                      0x00,
+                                      0x00,//TODO: TX ready pin config
+                                      0x00,//TODO: TX ready pin config
+                                      Utils::serializeLEInt(mode.raw)[0],
+                                      Utils::serializeLEInt(mode.raw)[1],
+                                      Utils::serializeLEInt(mode.raw)[2],
+                                      Utils::serializeLEInt(mode.raw)[3],
+                                      Utils::serializeLEInt(baudRateBitsps)[0],
+                                      Utils::serializeLEInt(baudRateBitsps)[1],
+                                      Utils::serializeLEInt(baudRateBitsps)[2],
+                                      Utils::serializeLEInt(baudRateBitsps)[3],
+                                      Utils::serializeLEInt(static_cast<uint16_t>(inProtocol))[0],
+                                      Utils::serializeLEInt(static_cast<uint16_t>(inProtocol))[1],
+                                      Utils::serializeLEInt(static_cast<uint16_t>(outProtocol))[0],
+                                      Utils::serializeLEInt(static_cast<uint16_t>(outProtocol))[1],
+                                      Utils::serializeLEInt<uint16_t>(extendedTxTimeout)[0],
+                                      Utils::serializeLEInt<uint16_t>(extendedTxTimeout)[1],
+                                      0x00,
+                                      0x00}) {}
     };
 
-    using OutProtocol = ConfigPortPacket::OutProtocol;
-    using InProtocol = ConfigPortPacket::InProtocol;
+    using OutProtocol = ConfigPort::OutProtocol;
+    using InProtocol = ConfigPort::InProtocol;
     inline static constexpr InProtocol operator|(const InProtocol left, const InProtocol right) {
         return static_cast<InProtocol>(static_cast<uint16_t>(left) | static_cast<uint16_t>(right));
     }
@@ -105,6 +105,6 @@ namespace UBLOX {
         return static_cast<OutProtocol>(static_cast<uint16_t>(left) | right);
     }
     inline static constexpr OutProtocol operator|(const uint16_t left, const OutProtocol right) { return right | left; }
-}// namespace UBLOX
+}// namespace UBLOX::Packet
 
 #endif//CONFIGPORTPACKET_H

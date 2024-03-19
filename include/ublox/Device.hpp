@@ -5,7 +5,7 @@
 #include <ostream>
 #include <string>
 
-#include <ublox/Packet.hpp>
+#include <ublox/packet/Packet.hpp>
 #include <ublox/Registers.hpp>
 
 #include <util/Serial.hpp>
@@ -17,8 +17,8 @@ namespace UBLOX {
         explicit Device(const std::string &path) : serial(Serial(path, Serial::BaudRate::Baud115200, 5)) {}
         virtual ~Device() = default;
 
-        [[nodiscard]] bool sendPacket(const Packet &packet) const;
-        [[nodiscard]] std::list<Packet> receivePacket() const;
+        [[nodiscard]] bool sendPacket(const Packet::Base &packet) const;
+        [[nodiscard]] std::list<Packet::Base> receivePacket() const;
 
     private:
         Serial serial;

@@ -2,15 +2,17 @@
 
 #include <Driver.hpp>
 
-#include <ublox/ConfigMessageRatePacket.hpp>
-#include <ublox/ConfigUSBPacket.hpp>
+#include <ublox/packet/ConfigMessageRatePacket.hpp>
+#include <ublox/packet/ConfigUSBPacket.hpp>
+#include <ublox/packet/MonitorReceiverAndSoftwareVersionPacket.hpp>
+#include <ublox/packet/NavPositionECEFPakcet.hpp>
 
 #include <spdlog/spdlog.h>
 
 Driver::Driver(const std::string &path) : UBLOX::Device(path) {
-    if (!sendPacket(UBLOX::ConfigUSBPacket(UBLOX::ConfigPortPacket::InProtocol::Ubx,
-                                           UBLOX::ConfigPortPacket::OutProtocol::Ubx |
-                                                   UBLOX::ConfigPortPacket::OutProtocol::Rtcm3))) {
+    if (!sendPacket(UBLOX::Packet::ConfigUSB(UBLOX::Packet::ConfigPort::InProtocol::Ubx,
+                                             UBLOX::Packet::ConfigPort::OutProtocol::Ubx |
+                                                     UBLOX::Packet::ConfigPort::OutProtocol::Rtcm3))) {
         spdlog::warn("Failed to send packet.");
     }
     if (acknowledged(UBLOX::Message::CfgPort) == AckResult::Acknowledged) {
@@ -19,7 +21,7 @@ Driver::Driver(const std::string &path) : UBLOX::Device(path) {
         spdlog::warn("USB parameters not set.");
     }
 
-    if (!sendPacket(UBLOX::ConfigMessageRatePacket(UBLOX::Message::NavEcefPositionSolution, 0x01)))
+    if (!sendPacket(UBLOX::Packet::ConfigMessageRate(UBLOX::Message::NavEcefPositionSolution, 0x01)))
         spdlog::warn("Failed to send packet.");
     if (acknowledged(UBLOX::Message::CfgMessageRate) == AckResult::Acknowledged) {
         spdlog::info("Message rate parameters set correctly.");
@@ -27,7 +29,7 @@ Driver::Driver(const std::string &path) : UBLOX::Device(path) {
         spdlog::warn("Message rate parameters not set.");
     }
 
-    if (!sendPacket(UBLOX::Packet(UBLOX::Message::CfgHighNavigationRate, {0x10, 0x00, 0x00, 0x00}))) {
+    if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::CfgHighNavigationRate, {0x10, 0x00, 0x00, 0x00}))) {
         spdlog::warn("Failed to send packet.");
     }
     if (acknowledged(UBLOX::Message::CfgHighNavigationRate) == AckResult::Acknowledged) {
@@ -37,36 +39,59 @@ Driver::Driver(const std::string &path) : UBLOX::Device(path) {
     }
 
     while (errno != EINTR) {
-        if (!sendPacket(UBLOX::Packet(UBLOX::Message::NavHighPrecisionEcefPositionSolution)))
+        if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::NavEcefPositionSolution)))
             spdlog::warn("Failed to send packet");
-        const std::list<UBLOX::Packet> packets = receivePacket();
+        std::list<UBLOX::Packet::Base> packets = receivePacket();
         if (packets.empty()) spdlog::warn("No packet received.");
-        for (const auto &p: packets) {
-            std::cout << "{";
-            for (const auto &d: p.data()) { std::cout << static_cast<int>(d) << ", "; }
-            std::cout << "}" << std::endl;
+        for (auto &p: packets) {
+            if (p.message() == UBLOX::Message::NavEcefPositionSolution) {
+                UBLOX::Packet::NavPositionECEF positionEcef(std::move(p));
+                if (!positionEcef.toData()) spdlog::warn("Could not parse raw data to ECEF position");
+                std::cout << "iTOW: " << positionEcef.getData().iTOWTimestampMillis
+                          << " ms, X: " << positionEcef.getData().XCm << " cm, Y: " << positionEcef.getData().YCm
+                          << " cm, Z: " << positionEcef.getData().ZCm
+                          << " cm, accuracy: " << positionEcef.getData().positionAccuracyCm << " cm" << std::endl;
+            } else {
+                std::cout << p.message() << ", DATA: {" << std::hex;
+                for (const auto &d: p.rawData()) { std::cout << "0x" << static_cast<int>(d) << ", "; }
+                std::cout << std::dec << "}" << std::endl;
+            }
         }
 
-        if (!sendPacket(UBLOX::Packet(UBLOX::Message::MonExtendedHardwareStatus)))
+        if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::MonReceiverAndSoftwareVersion)))
             spdlog::warn("Failed to send packet");
-        const std::list<UBLOX::Packet> packets2 = receivePacket();
+        std::list<UBLOX::Packet::Base> packets2 = receivePacket();
         if (packets.empty()) spdlog::warn("No packet received.");
-        for (const auto &p: packets2) {
-            std::cout << "{";
-            for (const auto &d: p.data()) { std::cout << static_cast<int>(d) << ", "; }
-            std::cout << "}" << std::endl;
+        for (UBLOX::Packet::Base &p: packets2) {
+            if (p.message() == UBLOX::Message::MonReceiverAndSoftwareVersion) {
+                UBLOX::Packet::MonitorReceiverAndSoftwareVersion versions(std::move(p));
+                if (!versions.toData()) spdlog::warn("Could not parse raw data to version information");
+                std::cout << "SW version: "
+                          << std::string(reinterpret_cast<const char *>(versions.getData().swVersion.data()))
+                          << ", HW version: "
+                          << std::string(reinterpret_cast<const char *>(versions.getData().hwVersion.data()))
+                          << ", extensions: ";
+                for (const auto &e: versions.getData().extensions) {
+                    if (!e.empty()) std::cout << std::string(reinterpret_cast<const char *>(e.data())) << ", ";
+                }
+                std::cout << std::endl;
+            } else {
+                std::cout << p.message() << ", DATA: {" << std::hex;
+                for (const auto &d: p.rawData()) { std::cout << static_cast<int>(d) << ", "; }
+                std::cout << std::dec << "}" << std::endl;
+            }
         }
     }
 }
 
 Driver::AckResult Driver::acknowledged(const UBLOX::Message message) const {
-    const std::list<UBLOX::Packet> ack = receivePacket();
+    const std::list<UBLOX::Packet::Base> ack = receivePacket();
     if (ack.empty()) {
         spdlog::warn("No packet received.");
         return AckResult::None;
     }
     for (const auto &p: ack) {
-        const std::vector<uint8_t> data = p.data();
+        const std::vector<uint8_t> data = p.rawData();
         switch (p.message()) {
             case UBLOX::Message::AckAcknowledged:
                 if (UBLOX::toMessage(data[0], data[1]) == message) return AckResult::Acknowledged;
