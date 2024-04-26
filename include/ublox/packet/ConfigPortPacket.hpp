@@ -19,8 +19,8 @@ namespace UBLOX::Packet {
             Usb = 0x03,
             Spi = 0x04,
         };
-        enum class InProtocol : uint16_t { Ubx = 0x01, Nmea = 0x02, Rtcm = 0x04, Rtcm3 = 0x20 };
-        enum class OutProtocol : uint16_t { Ubx = 0x01, Nmea = 0x02, Rtcm3 = 0x20 };
+        enum class InProtocol : uint16_t { None = 0x00, Ubx = 0x01, Nmea = 0x02, Rtcm = 0x04, Rtcm3 = 0x20 };
+        enum class OutProtocol : uint16_t { None = 0x00, Ubx = 0x01, Nmea = 0x02, Rtcm3 = 0x20 };
 
         struct PortMode {
             uint32_t raw;
@@ -29,12 +29,12 @@ namespace UBLOX::Packet {
         // Valid for UART port
         enum class CharLength : uint8_t { Bits5 = 0x00, Bits6 = 0x01, Bits7 = 0x02, Bits8 = 0x03 };
         enum class Parity : uint8_t { Even = 0x00, Odd = 0x01, None = 0x04 };
-        enum class StopBits : uint8_t { One = 0x00, OneAndHalve = 0x01, Two = 0x02, Halves = 0x03 };
+        enum class StopBits : uint8_t { One = 0x00, OneAndHalve = 0x01, Two = 0x02, Halve = 0x03 };
         struct __attribute__((__packed__)) __attribute__((aligned(1))) PortModeUARTRaw {
             uint32_t reserved1 : 6 = 0;
             uint32_t charLen : 2 = static_cast<uint32_t>(CharLength::Bits8);
             uint32_t reserved2 : 1 = 0;
-            uint32_t parity : 3 = static_cast<uint32_t>(Parity::Even);
+            uint32_t parity : 3 = static_cast<uint32_t>(Parity::None);
             uint32_t stopBits : 2 = static_cast<uint32_t>(StopBits::One);
             uint32_t reserved3 = 0;
         };
@@ -68,24 +68,24 @@ namespace UBLOX::Packet {
         ConfigPort(const PortID id, const PortMode mode, const uint32_t baudRateBitsps, const InProtocol inProtocol,
                    const OutProtocol outProtocol, const bool extendedTxTimeout)
             : Base(Message::CfgPort, {static_cast<uint8_t>(id),
-                                      0x00,
+                                      0x00,//reserved 1 byte
                                       0x00,//TODO: TX ready pin config
                                       0x00,//TODO: TX ready pin config
-                                      Utils::serializeLEInt(mode.raw)[0],
-                                      Utils::serializeLEInt(mode.raw)[1],
-                                      Utils::serializeLEInt(mode.raw)[2],
-                                      Utils::serializeLEInt(mode.raw)[3],
-                                      Utils::serializeLEInt(baudRateBitsps)[0],
-                                      Utils::serializeLEInt(baudRateBitsps)[1],
-                                      Utils::serializeLEInt(baudRateBitsps)[2],
-                                      Utils::serializeLEInt(baudRateBitsps)[3],
-                                      Utils::serializeLEInt(static_cast<uint16_t>(inProtocol))[0],
-                                      Utils::serializeLEInt(static_cast<uint16_t>(inProtocol))[1],
-                                      Utils::serializeLEInt(static_cast<uint16_t>(outProtocol))[0],
-                                      Utils::serializeLEInt(static_cast<uint16_t>(outProtocol))[1],
-                                      Utils::serializeLEInt<uint16_t>(extendedTxTimeout)[0],
-                                      Utils::serializeLEInt<uint16_t>(extendedTxTimeout)[1],
-                                      0x00,
+                                      Serde::serializeLEInt(mode.raw)[0],
+                                      Serde::serializeLEInt(mode.raw)[1],
+                                      Serde::serializeLEInt(mode.raw)[2],
+                                      Serde::serializeLEInt(mode.raw)[3],
+                                      Serde::serializeLEInt(baudRateBitsps)[0],
+                                      Serde::serializeLEInt(baudRateBitsps)[1],
+                                      Serde::serializeLEInt(baudRateBitsps)[2],
+                                      Serde::serializeLEInt(baudRateBitsps)[3],
+                                      Serde::serializeLEInt(static_cast<uint16_t>(inProtocol))[0],
+                                      Serde::serializeLEInt(static_cast<uint16_t>(inProtocol))[1],
+                                      Serde::serializeLEInt(static_cast<uint16_t>(outProtocol))[0],
+                                      Serde::serializeLEInt(static_cast<uint16_t>(outProtocol))[1],
+                                      Serde::serializeLEInt<uint16_t>(extendedTxTimeout)[0],
+                                      Serde::serializeLEInt<uint16_t>(extendedTxTimeout)[1],
+                                      0x00,//reserved 2 bytes
                                       0x00}) {}
     };
 

@@ -1,12 +1,12 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef SERDE_H
+#define SERDE_H
 
 #include <cstdint>
 #include <cstring>
-#include <vector>
 #include <iomanip>
+#include <vector>
 
-namespace Utils {
+namespace Serde {
     template<typename IntType>
     [[nodiscard]] inline static std::vector<uint8_t> serializeLEInt(const IntType &value) {
         std::vector<uint8_t> data{};
@@ -127,6 +127,6 @@ namespace Utils {
         std::memcpy(&r, &shadow, sizeof(FloatType));
         return r;
     }
-}// namespace Utils
+}// namespace Serde
 
-#endif//UTILS_H
+#endif//SERDE_H

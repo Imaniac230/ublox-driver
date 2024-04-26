@@ -2,6 +2,7 @@
 #define REGISTERS_H
 
 #include <cstdint>
+#include <sstream>
 
 namespace UBLOX {
     enum class SyncChar : uint8_t { FirstByte = 0xB5, SecondByte = 0x62 };
@@ -257,6 +258,11 @@ namespace UBLOX {
         stream << "CLASS: " << toClass(message) << ", ID: " << std::hex << "0x" << static_cast<int>(toRawId(message))
                << std::dec;
         return stream;
+    }
+    inline static std::string asStr(const Message message) {
+        std::stringstream ss;
+        ss << message;
+        return ss.str();
     }
 }// namespace UBLOX
 

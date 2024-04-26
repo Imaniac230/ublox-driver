@@ -22,11 +22,11 @@ namespace UBLOX::Packet {
 
             const std::vector<uint8_t> raw = rawData();
             data = Data{
-                    .iTOWTimestampMillis = Utils::deserializeLEInt<uint32_t>(&raw[0]),
-                    .XCm = Utils::deserializeLEInt<int32_t>(&raw[4]),
-                    .YCm = Utils::deserializeLEInt<int32_t>(&raw[8]),
-                    .ZCm = Utils::deserializeLEInt<int32_t>(&raw[12]),
-                    .positionAccuracyCm = Utils::deserializeLEInt<uint32_t>(&raw[16]),
+                    .iTOWTimestampMillis = Serde::deserializeLEInt<uint32_t>(&raw[0]),
+                    .XCm = Serde::deserializeLEInt<int32_t>(&raw[4]),
+                    .YCm = Serde::deserializeLEInt<int32_t>(&raw[8]),
+                    .ZCm = Serde::deserializeLEInt<int32_t>(&raw[12]),
+                    .positionAccuracyCm = Serde::deserializeLEInt<uint32_t>(&raw[16]),
             };
             return true;
         }

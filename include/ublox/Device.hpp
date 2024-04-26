@@ -5,11 +5,12 @@
 #include <ostream>
 #include <string>
 
-#include <ublox/packet/Packet.hpp>
 #include <ublox/Registers.hpp>
+#include <ublox/packet/Packet.hpp>
 
+#include <util/RingBuffer.hpp>
+#include <util/Serde.hpp>
 #include <util/Serial.hpp>
-#include <util/Utils.hpp>
 
 namespace UBLOX {
     class Device {
@@ -18,10 +19,12 @@ namespace UBLOX {
         virtual ~Device() = default;
 
         [[nodiscard]] bool sendPacket(const Packet::Base &packet) const;
-        [[nodiscard]] std::list<Packet::Base> receivePacket() const;
+        [[nodiscard]] std::list<Packet::Base> receivePackets();
 
     private:
         Serial serial;
+        //TODO: set size according to packet specifications (max expected size, etc.)
+        RingBuffer<uint8_t, std::array<uint8_t, 10000>> buffer{};
     };
 }// namespace UBLOX
 

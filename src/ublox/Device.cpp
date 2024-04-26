@@ -3,7 +3,7 @@
 #include <ublox/Device.hpp>
 #include <ublox/packet/ConfigUSBPacket.hpp>
 
-#include <util/Utils.hpp>
+#include <util/Serde.hpp>
 
 #include <spdlog/spdlog.h>
 
@@ -12,33 +12,59 @@ bool UBLOX::Device::sendPacket(const Packet::Base &packet) const {
     return serial.writeBytes(&*packet.serialized().begin(), packet.size()) == packet.size();
 }
 
-std::list<UBLOX::Packet::Base> UBLOX::Device::receivePacket() const {
-    std::vector<uint8_t> rxBuffer(1000, 0);
-    const size_t read = serial.readBytes(1000, reinterpret_cast<char *>(rxBuffer.data()));
+std::list<UBLOX::Packet::Base> UBLOX::Device::receivePackets() {
+    //FIXME: the accumulation logic should be extracted out into a separate method and this should only create the,
+    // packets based on the result from accumulate()
+    if (buffer.full()) SPDLOG_WARN("Buffer full, dropping packet!");
 
-    //        std::cout << "read bytes: " << read << std::endl;
+    //FIXME: this is very counter-productive - we're creating a new vector and probably making a copy each time,
+    // we should probably (also) give access to the buffer directly instead
+    std::vector<uint8_t> rxBuffer(buffer.capacity(), 0);
+    const size_t read = serial.readBytes(buffer.capacity(), reinterpret_cast<char *>(rxBuffer.data()));
+    if (!buffer.write(std::vector<uint8_t>{rxBuffer.begin(), rxBuffer.begin() + static_cast<int>(read)}))
+        SPDLOG_ERROR("Failed to write data to buffer!");
+
+    //    SPDLOG_INFO("read bytes: {}", read);
     //        if ((rxBuffer[0] == SyncChar::FirstByte) && (rxBuffer[1] == SyncChar::SecondByte)) {
     //            std::cout << "{" << std::hex;
     //            for (size_t i = 0; i < read; ++i) { std::cout << "0x" << static_cast<int>(rxBuffer[i]) << ", "; }
     //            std::cout << "}" << std::dec << std::endl;
     //        } else {
-    //            for (size_t i = 0; i < read; ++i) { std::cout << rxBuffer[i]; }
+    //    for (size_t i = 0; i < read; ++i) { std::cout << rxBuffer[i]; }
     //        }
 
     std::list<Packet::Base> packets{};
-    for (int i = 0; i < static_cast<int>(read);) {
-        if ((rxBuffer[i] == SyncChar::FirstByte) && (rxBuffer[i + 1] == SyncChar::SecondByte)) {
-            const auto dataSize = Utils::deserializeLEInt<uint16_t>(
-                    std::vector<uint8_t>(rxBuffer.begin() + i + 4, rxBuffer.begin() + i + 6).data());
-            Packet::Base rcvPacket(static_cast<MessageClass>(rxBuffer[i + 2]), rxBuffer[i + 3],
-                                   std::vector<uint8_t>(rxBuffer.begin() + i + 6, rxBuffer.begin() + i + 6 + dataSize));
-            if (rcvPacket.checksumValid(
-                        std::array<uint8_t, 2>{rxBuffer[i + 6 + dataSize], rxBuffer[i + 6 + dataSize + 1]})) {
-                packets.push_back(std::move(rcvPacket));
+    //TODO: define constants (HEADER_BYTES, CHECKSUM_BYTES, etc)
+    bool accumulating = false;
+    while ((buffer.getActiveElements() >= 6) && !accumulating) {
+        accumulating = false;
+        if ((buffer.tailOffset(0).value_or(0) == SyncChar::FirstByte) &&
+            (buffer.tailOffset(1).value_or(0) == SyncChar::SecondByte)) {
+            const auto dataSize = Serde::deserializeLEInt<uint16_t>(
+                    std::array<uint8_t, 2>{buffer.tailOffset(4).value_or(0), buffer.tailOffset(5).value_or(0)}.data());
+            if (buffer.getActiveElements() >= (6 + dataSize + 2)) {
+                //FIXME: this is messy, we should probably (also) provide direct access to the buffer, or at least implement
+                // a Base packet constructor from raw bytes
+                const auto pckt = buffer.read<std::vector<uint8_t>>(6 + dataSize + 2);
+                if (pckt.has_value()) {
+                    Packet::Base rcvPacket(
+                            static_cast<MessageClass>(pckt.value()[2]), pckt.value()[3],
+                            std::vector<uint8_t>(pckt.value().begin() + 6, pckt.value().begin() + 6 + dataSize));
+                    if (rcvPacket.checksumValid(
+                                std::array<uint8_t, 2>{pckt.value()[6 + dataSize], pckt.value()[6 + dataSize + 1]})) {
+                        packets.push_back(std::move(rcvPacket));
+                    } else {
+                        SPDLOG_WARN("Invalid checksum, dropping packet.");
+                    }
+                } else {
+                    SPDLOG_WARN("Failed to read data from buffer!");
+                }
             } else {
-                spdlog::warn("Invalid checksum, dropping packet.");
+                accumulating = true;
             }
-            i += 6 + dataSize + 2;
+        } else {
+            SPDLOG_WARN("No valid packet found, popping one data element from buffer.");
+            buffer.read<std::list<uint8_t>>(1).has_value();
         }
     }
 

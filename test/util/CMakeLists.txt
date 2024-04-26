@@ -1,2 +1,2 @@
 declare_test(serialTests serialTests.cpp)
-declare_test(utilsSerializationTest utilsSerializationTest.cpp)
+declare_test(serdeTests serdeTests.cpp)

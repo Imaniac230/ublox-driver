@@ -5,7 +5,7 @@
 
 #include <ublox/Registers.hpp>
 
-#include <util/Utils.hpp>
+#include <util/Serde.hpp>
 
 
 namespace UBLOX::Packet {
@@ -17,10 +17,11 @@ namespace UBLOX::Packet {
         Base(const MessageClass messageClass, const uint8_t messageId, std::vector<uint8_t> data)
             : serializedContents({static_cast<uint8_t>(SyncChar::FirstByte), static_cast<uint8_t>(SyncChar::SecondByte),
                                   static_cast<uint8_t>(messageClass), messageId}) {
-            const std::vector<uint8_t> length = Utils::serializeLEInt(static_cast<uint16_t>(data.size()));
-            serializedContents.insert(serializedContents.end(), length.begin(), length.end());
-            const auto d = std::move(data);
-            serializedContents.insert(serializedContents.end(), d.begin(), d.end());
+            std::vector<uint8_t> length = Serde::serializeLEInt(static_cast<uint16_t>(data.size()));
+            serializedContents.resize(serializedContents.size() + length.size());
+            std::move(length.begin(), length.end(), serializedContents.end() - static_cast<int>(length.size()));
+            serializedContents.resize(serializedContents.size() + data.size());
+            std::move(data.begin(), data.end(), serializedContents.end() - static_cast<int>(data.size()));
             appendChecksum();
         }
         Base(const Message message, std::vector<uint8_t> data)
@@ -32,7 +33,7 @@ namespace UBLOX::Packet {
         [[nodiscard]] const SerializedType &serialized() const { return serializedContents; }
         [[nodiscard]] size_t size() const { return serializedContents.size(); }
         [[nodiscard]] inline uint16_t dataSize() const {
-            return Utils::deserializeLEInt<uint16_t>(
+            return Serde::deserializeLEInt<uint16_t>(
                     std::vector<uint8_t>{serializedContents[4], serializedContents[5]}.data());
         }
         [[nodiscard]] inline bool checksumValid(const std::array<uint8_t, 2> &received) const {
