@@ -13,11 +13,11 @@ bool UBLOX::Device::sendPacket(const Packet::Base &packet) const {
 }
 
 std::list<UBLOX::Packet::Base> UBLOX::Device::receivePackets() {
-    //FIXME: the accumulation logic should be extracted out into a separate method and this should only create the,
+    //FIXME(data-parsing): the accumulation logic should be extracted out into a separate method and this should only create the,
     // packets based on the result from accumulate()
     if (buffer.full()) SPDLOG_WARN("Buffer full, dropping packet!");
 
-    //FIXME: this is very counter-productive - we're creating a new vector and probably making a copy each time,
+    //FIXME(data-parsing): this is very counter-productive - we're creating a new vector and probably making a copy each time,
     // we should probably (also) give access to the buffer directly instead
     std::vector<uint8_t> rxBuffer(buffer.capacity(), 0);
     const size_t read = serial.readBytes(buffer.capacity(), reinterpret_cast<char *>(rxBuffer.data()));
@@ -25,16 +25,16 @@ std::list<UBLOX::Packet::Base> UBLOX::Device::receivePackets() {
         SPDLOG_ERROR("Failed to write data to buffer!");
 
     //    SPDLOG_INFO("read bytes: {}", read);
-    //        if ((rxBuffer[0] == SyncChar::FirstByte) && (rxBuffer[1] == SyncChar::SecondByte)) {
-    //            std::cout << "{" << std::hex;
-    //            for (size_t i = 0; i < read; ++i) { std::cout << "0x" << static_cast<int>(rxBuffer[i]) << ", "; }
-    //            std::cout << "}" << std::dec << std::endl;
-    //        } else {
-    //    for (size_t i = 0; i < read; ++i) { std::cout << rxBuffer[i]; }
-    //        }
+    //    if ((rxBuffer[0] == SyncChar::FirstByte) && (rxBuffer[1] == SyncChar::SecondByte)) {
+    //        std::cout << "{" << std::hex;
+    //        for (size_t i = 0; i < read; ++i) { std::cout << "0x" << static_cast<int>(rxBuffer[i]) << ", "; }
+    //        std::cout << "}" << std::dec << std::endl;
+    //    } else {
+    //        for (size_t i = 0; i < read; ++i) { std::cout << rxBuffer[i]; }
+    //    }
 
     std::list<Packet::Base> packets{};
-    //TODO: define constants (HEADER_BYTES, CHECKSUM_BYTES, etc)
+    //TODO(data-parsing): define constants (HEADER_BYTES, CHECKSUM_BYTES, etc)
     bool accumulating = false;
     while ((buffer.getActiveElements() >= 6) && !accumulating) {
         accumulating = false;
@@ -43,7 +43,7 @@ std::list<UBLOX::Packet::Base> UBLOX::Device::receivePackets() {
             const auto dataSize = Serde::deserializeLEInt<uint16_t>(
                     std::array<uint8_t, 2>{buffer.tailOffset(4).value_or(0), buffer.tailOffset(5).value_or(0)}.data());
             if (buffer.getActiveElements() >= (6 + dataSize + 2)) {
-                //FIXME: this is messy, we should probably (also) provide direct access to the buffer, or at least implement
+                //FIXME(data-parsing): this is messy, we should probably (also) provide direct access to the buffer, or at least implement
                 // a Base packet constructor from raw bytes
                 const auto pckt = buffer.read<std::vector<uint8_t>>(6 + dataSize + 2);
                 if (pckt.has_value()) {
