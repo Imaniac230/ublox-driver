@@ -10,13 +10,13 @@
 
 #include <spdlog/spdlog.h>
 
-Driver::Driver(const std::string &path) : UBLOX::Device(path) {
+Driver::Driver(Config configuration) : UBLOX::Device(configuration.portPath), config(std::move(configuration)) {
     //Configure communication ports
-    //    if (!sendPacket(UBLOX::Packet::ConfigUART(
-    //                UBLOX::Packet::ConfigUART::UART::Uart1, UBLOX::Packet::ConfigUART::CharLength::Bits8,
-    //                UBLOX::Packet::ConfigUART::Parity::None, UBLOX::Packet::ConfigUART::StopBits::One, 115200,
-    //                UBLOX::Packet::InProtocol::Ubx, UBLOX::Packet::OutProtocol::Ubx, false)))
-    //        SPDLOG_WARN("Failed to send packet.");
+    if (!sendPacket(UBLOX::Packet::ConfigUART(
+                UBLOX::Packet::ConfigUART::UART::Uart1, UBLOX::Packet::ConfigUART::CharLength::Bits8,
+                UBLOX::Packet::ConfigUART::Parity::None, UBLOX::Packet::ConfigUART::StopBits::One, 115200,
+                UBLOX::Packet::InProtocol::Ubx, UBLOX::Packet::OutProtocol::Ubx, false)))
+        SPDLOG_WARN("Failed to send packet.");
     if (!sendPacket(UBLOX::Packet::ConfigUSB(UBLOX::Packet::InProtocol::Ubx, UBLOX::Packet::OutProtocol::Ubx)))
         SPDLOG_WARN("Failed to send packet.");
     if (!sendPacket(UBLOX::Packet::ConfigUART(
@@ -80,4 +80,16 @@ Driver::Driver(const std::string &path) : UBLOX::Device(path) {
             }
         }
     }
+}
+
+Driver::Config Driver::Config::fromJson(const std::string &path) {
+    std::ifstream configFile(path);
+    nlohmann::json configJson;
+    try {
+        configFile >> configJson;
+    } catch (...) { throw std::runtime_error{"Could not parse config file '" + path + "', invalid input."}; }
+
+    Config cfg;
+    from_json(configJson, cfg);
+    return cfg;
 }

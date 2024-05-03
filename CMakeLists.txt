@@ -8,7 +8,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -ldl -fconcepts")
 
-find_package(spdlog)
+find_package(spdlog REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 set(core_lib_name libublox)
 set(utils_lib_name libutils)
@@ -24,6 +25,7 @@ set(utils_sources
 
 set(external_libs
         spdlog::spdlog
+        nlohmann_json::nlohmann_json
 )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)

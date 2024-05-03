@@ -10,13 +10,13 @@ Serial::Serial(const std::string &path, const BaudRate baud, const int minBytes)
 
     termios options{};
     memset(&options, 0, sizeof(options));
-
     if (tcgetattr(fileDescriptor, &options) != 0)
         throw std::runtime_error{"ERROR -> Failed to get serial port options for '" + path +
                                  "' (errno: " + std::to_string(errno) + " -> " + strerror(errno) + ")."};
 
     options.c_cflag &= ~PARENB;
     options.c_cflag &= ~CSTOPB;
+    options.c_cflag &= ~CSIZE;
     options.c_cflag |= CS8;
     options.c_cflag &= ~CRTSCTS;
     options.c_cflag |= CREAD | CLOCAL;
@@ -24,6 +24,7 @@ Serial::Serial(const std::string &path, const BaudRate baud, const int minBytes)
     options.c_lflag &= ~ICANON;
     options.c_lflag &= ~ISIG;
     options.c_lflag &= ~(ECHO | ECHOE | ECHONL);
+
     options.c_iflag &= ~(IXON | IXOFF | IXANY);
     options.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL);
 
