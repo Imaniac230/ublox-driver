@@ -21,12 +21,13 @@ namespace UBLOX::Packet {
             if (message() != MESSAGE) return false;
 
             const std::vector<uint8_t> raw = rawData();
+            uint16_t offset = 0;
             data = Data{
-                    .iTOWTimestampMillis = Serde::deserializeLEInt<uint32_t>(&raw[0]),
-                    .XCm = Serde::deserializeLEInt<int32_t>(&raw[4]),
-                    .YCm = Serde::deserializeLEInt<int32_t>(&raw[8]),
-                    .ZCm = Serde::deserializeLEInt<int32_t>(&raw[12]),
-                    .positionAccuracyCm = Serde::deserializeLEInt<uint32_t>(&raw[16]),
+                    .iTOWTimestampMillis = Serde::deserializeLEInt<uint32_t>(&raw[offset]),
+                    .XCm = Serde::deserializeLEInt<int32_t>(&raw[offset += sizeof(uint32_t)]),
+                    .YCm = Serde::deserializeLEInt<int32_t>(&raw[offset += sizeof(int32_t)]),
+                    .ZCm = Serde::deserializeLEInt<int32_t>(&raw[offset += sizeof(int32_t)]),
+                    .positionAccuracyCm = Serde::deserializeLEInt<uint32_t>(&raw[offset += sizeof(int32_t)]),
             };
             return true;
         }

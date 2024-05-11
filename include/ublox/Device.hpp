@@ -15,8 +15,7 @@
 namespace UBLOX {
     class Device {
     public:
-        //FIXME(baud-rate): export baud rate to config (default for UART1 is 38400)
-        explicit Device(const std::string &path) : serial(Serial(path, Serial::BaudRate::Baud115200, 5)) {}
+        explicit Device(const std::string &path, const Serial::BaudRate rate) : serial(Serial(path, rate, 5)) {}
         virtual ~Device() = default;
 
         [[nodiscard]] bool sendPacket(const Packet::Base &packet) const;
