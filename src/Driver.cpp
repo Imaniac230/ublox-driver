@@ -103,8 +103,10 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
                 if (!positionLlh.toData()) SPDLOG_WARN("Could not parse raw data to LLH position");
                 std::cout << "NavGeodeticPositionSolution:" << std::endl;
                 std::cout << "iTOW: " << positionLlh.getData().iTOWTimestampMillis
-                          << " ms, lon: " << positionLlh.getData().longitude
-                          << " deg, lat: " << positionLlh.getData().latitude
+                          << " ms, lon: " << std::setprecision(9)
+                          << static_cast<float>(positionLlh.getData().longitude) * 1e-7
+                          << " deg, lat: " << std::setprecision(9)
+                          << static_cast<float>(positionLlh.getData().latitude) * 1e-7
                           << " deg, ellipsoid height: " << positionLlh.getData().ellipsoidHeightMm
                           << " mm, MSL height: " << positionLlh.getData().MSLHeightMm
                           << " mm, horizontal accuracy: " << positionLlh.getData().horizontalAccuracyMm
