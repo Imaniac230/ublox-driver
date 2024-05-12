@@ -22,10 +22,10 @@ public:
         if (fileDescriptor != -1) close(fileDescriptor);
     }
 
-    [[nodiscard]] inline size_t readBytes(unsigned bytesToRead, char *buffer) const {
+    [[nodiscard]] inline ssize_t readBytes(unsigned bytesToRead, char *buffer) const {
         return read(fileDescriptor, buffer, bytesToRead);
     }
-    [[nodiscard]] inline size_t writeBytes(const uint8_t *buffer, uint8_t bufferLength) const {
+    [[nodiscard]] inline ssize_t writeBytes(const uint8_t *buffer, uint8_t bufferLength) const {
         return write(fileDescriptor, buffer, bufferLength);
     }
 

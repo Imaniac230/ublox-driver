@@ -7,7 +7,7 @@
 
 bool UBLOX::Device::sendPacket(const Packet::Base &packet) const {
     if (packet.empty()) return false;
-    return serial.writeBytes(&*packet.serialized().begin(), packet.size()) == packet.size();
+    return static_cast<size_t>(serial.writeBytes(&*packet.serialized().begin(), packet.size())) == packet.size();
 }
 
 std::list<UBLOX::Packet::Base> UBLOX::Device::receivePackets() {
@@ -18,7 +18,9 @@ std::list<UBLOX::Packet::Base> UBLOX::Device::receivePackets() {
     //FIXME(data-parsing): this is very counter-productive - we're creating a new vector and probably making a copy each time,
     // we should probably (also) give access to the buffer directly instead
     std::vector<uint8_t> rxBuffer(buffer.capacity(), 0);
-    const size_t read = serial.readBytes(buffer.capacity(), reinterpret_cast<char *>(rxBuffer.data()));
+    const ssize_t read = serial.readBytes(buffer.capacity(), reinterpret_cast<char *>(rxBuffer.data()));
+    if (read < 0) return {};
+
     if (!buffer.write(std::vector<uint8_t>{rxBuffer.begin(), rxBuffer.begin() + static_cast<int>(read)}))
         SPDLOG_ERROR("Failed to write data to buffer!");
 
