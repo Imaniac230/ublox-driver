@@ -18,9 +18,8 @@ public:
     };
 
     Serial(const std::string &path, BaudRate baud, int minBytes);
-    virtual ~Serial() {
-        if (fileDescriptor != -1) close(fileDescriptor);
-    }
+    //FIXME(dtor): can't have the destructor implemented as it would break assignments
+    //    virtual ~Serial() { close(); }
 
     [[nodiscard]] inline ssize_t readBytes(unsigned bytesToRead, char *buffer) const {
         return read(fileDescriptor, buffer, bytesToRead);
@@ -30,6 +29,13 @@ public:
     }
 
     void setNonBlocking(bool nonBlocking) const;
+    void close() {
+        if (fileDescriptor != -1) {
+            //TODO: handle errors?
+            ::close(fileDescriptor);
+            fileDescriptor = -1;
+        }
+    }
 
     [[nodiscard]] int getFileDescriptor() const { return fileDescriptor; }
 

@@ -1,7 +1,7 @@
 {
   "port": {
     "path": "/dev/ttyACM0",
-    "rate": "Baud115200",
+    "rate": "Baud38400",
     "newSetRate": "Baud115200"
   },
   "device": {

@@ -15,10 +15,11 @@ Driver::Driver(Config configuration)
                 UBLOX::Packet::Cfg::Port::Parity::None, UBLOX::Packet::Cfg::Port::StopBits::One,
                 toRaw(config.port.newSetRate), UBLOX::Packet::Cfg::Port::InProtocol::Ubx,
                 UBLOX::Packet::Cfg::Port::OutProtocol::Ubx, false)))
-        SPDLOG_WARN("Failed to send packet.");
+        SPDLOG_WARN("Failed to send UART config packet for UART1.");
+    if (config.port.newSetRate != config.port.rate) reconnect(config.port.path, config.port.newSetRate);
     if (!sendPacket(UBLOX::Packet::Cfg::USB(UBLOX::Packet::Cfg::Port::InProtocol::Ubx,
                                             UBLOX::Packet::Cfg::Port::OutProtocol::Ubx)))
-        SPDLOG_WARN("Failed to send packet.");
+        SPDLOG_WARN("Failed to send USB config packet.");
 
     //Configure the RTCM port for RTK
     //TODO(rtk): finish this
@@ -29,7 +30,7 @@ Driver::Driver(Config configuration)
                         UBLOX::Packet::Cfg::Port::Parity::None, UBLOX::Packet::Cfg::Port::StopBits::One,
                         toRaw(config.port.newSetRate), UBLOX::Packet::Cfg::Port::InProtocol::None,
                         UBLOX::Packet::Cfg::Port::OutProtocol::Rtcm3, false)))
-                SPDLOG_WARN("Failed to send packet.");
+                SPDLOG_WARN("Failed to send UART config packet for UART2.");
             break;
         case Driver::Type::Rover:
             if (!sendPacket(UBLOX::Packet::Cfg::UART(
@@ -37,7 +38,7 @@ Driver::Driver(Config configuration)
                         UBLOX::Packet::Cfg::Port::Parity::None, UBLOX::Packet::Cfg::Port::StopBits::One,
                         toRaw(config.port.newSetRate), UBLOX::Packet::Cfg::Port::InProtocol::Rtcm3,
                         UBLOX::Packet::Cfg::Port::OutProtocol::None, false)))
-                SPDLOG_WARN("Failed to send packet.");
+                SPDLOG_WARN("Failed to send UART config packet for UART2.");
             break;
         default:
             break;
@@ -71,19 +72,19 @@ Driver::Config Driver::Config::fromJson(const std::string &path) {
 void Driver::configureExampleData() const {
     //Configure periodic messages
     if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavEcefPositionSolution, 0x01)))
-        SPDLOG_WARN("Failed to send packet.");
+        SPDLOG_WARN("Failed to send message rate config packet for ECEF position.");
     if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavGeodeticPositionSolution, 0x01)))
-        SPDLOG_WARN("Failed to send packet.");
+        SPDLOG_WARN("Failed to send message rate config packet for geodetic position.");
     //    if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::CfgHighNavigationRate, {0x10, 0x00, 0x00, 0x00})))
     //        SPDLOG_WARN("Failed to send packet.");
     if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavOdometerSolution, 0x01)))
-        SPDLOG_WARN("Failed to send packet.");
+        SPDLOG_WARN("Failed to send message rate packet for odometer.");
 
     //Poll message once
     if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::MonReceiverAndSoftwareVersion)))
-        SPDLOG_WARN("Failed to send packet");
+        SPDLOG_WARN("Failed to send polling packet for receiver and software version.");
     //    if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::NavEcefPositionSolution)))
-    //        SPDLOG_WARN("Failed to send packet");
+    //        SPDLOG_WARN("Failed to send polling packet for ECEF position.");
 }
 
 void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
@@ -91,7 +92,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
         switch (p.message()) {
             case UBLOX::Message::NavEcefPositionSolution: {
                 UBLOX::Packet::Nav::PositionECEF positionEcef(std::move(p));
-                if (!positionEcef.toData()) SPDLOG_WARN("Could not parse raw data to ECEF position");
+                if (!positionEcef.toData()) SPDLOG_WARN("Could not parse raw data to ECEF position.");
                 std::cout << "NavEcefPositionSolution:" << std::endl;
                 std::cout << "iTOW: " << positionEcef.getData().iTOWTimestampMillis
                           << " ms, X: " << positionEcef.getData().XCm << " cm, Y: " << positionEcef.getData().YCm
@@ -100,7 +101,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
             } break;
             case UBLOX::Message::NavGeodeticPositionSolution: {
                 UBLOX::Packet::Nav::PositionLLH positionLlh(std::move(p));
-                if (!positionLlh.toData()) SPDLOG_WARN("Could not parse raw data to LLH position");
+                if (!positionLlh.toData()) SPDLOG_WARN("Could not parse raw data to LLH position.");
                 std::cout << "NavGeodeticPositionSolution:" << std::endl;
                 std::cout << "iTOW: " << positionLlh.getData().iTOWTimestampMillis
                           << " ms, lon: " << std::setprecision(9)
@@ -115,7 +116,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
             } break;
             case UBLOX::Message::MonReceiverAndSoftwareVersion: {
                 UBLOX::Packet::Mon::ReceiverAndSoftwareVersion versions(std::move(p));
-                if (!versions.toData()) SPDLOG_WARN("Could not parse raw data to version information");
+                if (!versions.toData()) SPDLOG_WARN("Could not parse raw data to version information.");
                 std::cout << "MonReceiverAndSoftwareVersion:" << std::endl;
                 std::cout << "SW version: "
                           << std::string(reinterpret_cast<const char *>(versions.getData().swVersion.data()))
@@ -129,7 +130,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
             } break;
             case UBLOX::Message::NavOdometerSolution: {
                 UBLOX::Packet::Nav::Odometer odometer(std::move(p));
-                if (!odometer.toData()) SPDLOG_WARN("Could not parse raw data to ECEF position");
+                if (!odometer.toData()) SPDLOG_WARN("Could not parse raw data to odometer.");
                 std::cout << "NavOdometerSolution:" << std::endl;
                 std::cout << "iTOW: " << odometer.getData().iTOWTimestampMillis
                           << " ms, since last reset: " << odometer.getData().resetGroundDistanceM

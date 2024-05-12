@@ -7,6 +7,7 @@
 #include <util/Serde.hpp>
 
 namespace UBLOX::Packet {
+    //TODO(constants): define constants according to the data structure (header size, crc size, min packet size, etc.)
     class Base {
     public:
         typedef std::vector<uint8_t> SerializedType;
