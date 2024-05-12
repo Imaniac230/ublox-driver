@@ -1,8 +1,6 @@
 #include <iostream>
 
 #include <ublox/Device.hpp>
-#include <ublox/packet/ConfigUSBPacket.hpp>
-
 #include <util/Serde.hpp>
 
 #include <spdlog/spdlog.h>

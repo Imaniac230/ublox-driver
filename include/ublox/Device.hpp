@@ -6,8 +6,7 @@
 #include <string>
 
 #include <ublox/Registers.hpp>
-#include <ublox/packet/Packet.hpp>
-
+#include <ublox/packet/Base.hpp>
 #include <util/RingBuffer.hpp>
 #include <util/Serde.hpp>
 #include <util/Serial.hpp>

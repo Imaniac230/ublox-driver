@@ -1,12 +1,10 @@
-#ifndef PACKET_H
-#define PACKET_H
+#ifndef PACKET_BASE_H
+#define PACKET_BASE_H
 
 #include <list>
 
 #include <ublox/Registers.hpp>
-
 #include <util/Serde.hpp>
-
 
 namespace UBLOX::Packet {
     class Base {
@@ -73,4 +71,4 @@ namespace UBLOX::Packet {
 }// namespace UBLOX::Packet
 
 
-#endif//PACKET_H
+#endif//PACKET_BASE_H

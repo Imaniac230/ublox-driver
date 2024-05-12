@@ -1,44 +1,42 @@
 #include <iostream>
 
 #include <Driver.hpp>
-
-#include <ublox/packet/ConfigMessageRatePacket.hpp>
-#include <ublox/packet/ConfigUARTPacket.hpp>
-#include <ublox/packet/ConfigUSBPacket.hpp>
-#include <ublox/packet/MonitorReceiverAndSoftwareVersionPacket.hpp>
-#include <ublox/packet/NavPositionECEFPakcet.hpp>
-#include <ublox/packet/NavPositionLLHPakcet.hpp>
+#include <ublox/packet/Configuration.hpp>
+#include <ublox/packet/Monitor.hpp>
+#include <ublox/packet/Navigation.hpp>
 
 #include <spdlog/spdlog.h>
 
 Driver::Driver(Config configuration)
     : UBLOX::Device(configuration.port.path, configuration.port.rate), config(std::move(configuration)) {
     //Configure communication ports
-    if (!sendPacket(UBLOX::Packet::ConfigUART(
-                UBLOX::Packet::ConfigUART::UART::Uart1, UBLOX::Packet::ConfigUART::CharLength::Bits8,
-                UBLOX::Packet::ConfigUART::Parity::None, UBLOX::Packet::ConfigUART::StopBits::One,
-                toRaw(config.port.newSetRate), UBLOX::Packet::InProtocol::Ubx, UBLOX::Packet::OutProtocol::Ubx, false)))
+    if (!sendPacket(UBLOX::Packet::Cfg::UART(
+                UBLOX::Packet::Cfg::Port::UARTID::Uart1, UBLOX::Packet::Cfg::Port::CharLength::Bits8,
+                UBLOX::Packet::Cfg::Port::Parity::None, UBLOX::Packet::Cfg::Port::StopBits::One,
+                toRaw(config.port.newSetRate), UBLOX::Packet::Cfg::Port::InProtocol::Ubx,
+                UBLOX::Packet::Cfg::Port::OutProtocol::Ubx, false)))
         SPDLOG_WARN("Failed to send packet.");
-    if (!sendPacket(UBLOX::Packet::ConfigUSB(UBLOX::Packet::InProtocol::Ubx, UBLOX::Packet::OutProtocol::Ubx)))
+    if (!sendPacket(UBLOX::Packet::Cfg::USB(UBLOX::Packet::Cfg::Port::InProtocol::Ubx,
+                                            UBLOX::Packet::Cfg::Port::OutProtocol::Ubx)))
         SPDLOG_WARN("Failed to send packet.");
 
     //Configure the RTCM port for RTK
     //TODO(rtk): finish this
     switch (config.device.type) {
         case Driver::Type::Base:
-            if (!sendPacket(UBLOX::Packet::ConfigUART(
-                        UBLOX::Packet::ConfigUART::UART::Uart2, UBLOX::Packet::ConfigUART::CharLength::Bits8,
-                        UBLOX::Packet::ConfigUART::Parity::None, UBLOX::Packet::ConfigUART::StopBits::One,
-                        toRaw(config.port.newSetRate), UBLOX::Packet::InProtocol::None,
-                        UBLOX::Packet::OutProtocol::Rtcm3, false)))
+            if (!sendPacket(UBLOX::Packet::Cfg::UART(
+                        UBLOX::Packet::Cfg::Port::UARTID::Uart2, UBLOX::Packet::Cfg::Port::CharLength::Bits8,
+                        UBLOX::Packet::Cfg::Port::Parity::None, UBLOX::Packet::Cfg::Port::StopBits::One,
+                        toRaw(config.port.newSetRate), UBLOX::Packet::Cfg::Port::InProtocol::None,
+                        UBLOX::Packet::Cfg::Port::OutProtocol::Rtcm3, false)))
                 SPDLOG_WARN("Failed to send packet.");
             break;
         case Driver::Type::Rover:
-            if (!sendPacket(UBLOX::Packet::ConfigUART(
-                        UBLOX::Packet::ConfigUART::UART::Uart2, UBLOX::Packet::ConfigUART::CharLength::Bits8,
-                        UBLOX::Packet::ConfigUART::Parity::None, UBLOX::Packet::ConfigUART::StopBits::One,
-                        toRaw(config.port.newSetRate), UBLOX::Packet::InProtocol::Rtcm3,
-                        UBLOX::Packet::OutProtocol::None, false)))
+            if (!sendPacket(UBLOX::Packet::Cfg::UART(
+                        UBLOX::Packet::Cfg::Port::UARTID::Uart2, UBLOX::Packet::Cfg::Port::CharLength::Bits8,
+                        UBLOX::Packet::Cfg::Port::Parity::None, UBLOX::Packet::Cfg::Port::StopBits::One,
+                        toRaw(config.port.newSetRate), UBLOX::Packet::Cfg::Port::InProtocol::Rtcm3,
+                        UBLOX::Packet::Cfg::Port::OutProtocol::None, false)))
                 SPDLOG_WARN("Failed to send packet.");
             break;
         default:
@@ -72,12 +70,14 @@ Driver::Config Driver::Config::fromJson(const std::string &path) {
 
 void Driver::configureExampleData() const {
     //Configure periodic messages
-    if (!sendPacket(UBLOX::Packet::ConfigMessageRate(UBLOX::Message::NavEcefPositionSolution, 0x01)))
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavEcefPositionSolution, 0x01)))
         SPDLOG_WARN("Failed to send packet.");
-    if (!sendPacket(UBLOX::Packet::ConfigMessageRate(UBLOX::Message::NavGeodeticPositionSolution, 0x01)))
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavGeodeticPositionSolution, 0x01)))
         SPDLOG_WARN("Failed to send packet.");
     //    if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::CfgHighNavigationRate, {0x10, 0x00, 0x00, 0x00})))
     //        SPDLOG_WARN("Failed to send packet.");
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavOdometerSolution, 0x01)))
+        SPDLOG_WARN("Failed to send packet.");
 
     //Poll message once
     if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::MonReceiverAndSoftwareVersion)))
@@ -90,7 +90,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
     for (auto &p: std::move(packets)) {
         switch (p.message()) {
             case UBLOX::Message::NavEcefPositionSolution: {
-                UBLOX::Packet::NavPositionECEF positionEcef(std::move(p));
+                UBLOX::Packet::Nav::PositionECEF positionEcef(std::move(p));
                 if (!positionEcef.toData()) SPDLOG_WARN("Could not parse raw data to ECEF position");
                 std::cout << "NavEcefPositionSolution:" << std::endl;
                 std::cout << "iTOW: " << positionEcef.getData().iTOWTimestampMillis
@@ -99,7 +99,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
                           << " cm, accuracy: " << positionEcef.getData().positionAccuracyCm << " cm" << std::endl;
             } break;
             case UBLOX::Message::NavGeodeticPositionSolution: {
-                UBLOX::Packet::NavPositionLLH positionLlh(std::move(p));
+                UBLOX::Packet::Nav::PositionLLH positionLlh(std::move(p));
                 if (!positionLlh.toData()) SPDLOG_WARN("Could not parse raw data to LLH position");
                 std::cout << "NavGeodeticPositionSolution:" << std::endl;
                 std::cout << "iTOW: " << positionLlh.getData().iTOWTimestampMillis
@@ -114,7 +114,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
                           << std::endl;
             } break;
             case UBLOX::Message::MonReceiverAndSoftwareVersion: {
-                UBLOX::Packet::MonitorReceiverAndSoftwareVersion versions(std::move(p));
+                UBLOX::Packet::Mon::ReceiverAndSoftwareVersion versions(std::move(p));
                 if (!versions.toData()) SPDLOG_WARN("Could not parse raw data to version information");
                 std::cout << "MonReceiverAndSoftwareVersion:" << std::endl;
                 std::cout << "SW version: "
@@ -126,6 +126,15 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
                     if (!e.empty()) std::cout << std::string(reinterpret_cast<const char *>(e.data())) << ", ";
                 }
                 std::cout << std::endl;
+            } break;
+            case UBLOX::Message::NavOdometerSolution: {
+                UBLOX::Packet::Nav::Odometer odometer(std::move(p));
+                if (!odometer.toData()) SPDLOG_WARN("Could not parse raw data to ECEF position");
+                std::cout << "NavOdometerSolution:" << std::endl;
+                std::cout << "iTOW: " << odometer.getData().iTOWTimestampMillis
+                          << " ms, since last reset: " << odometer.getData().resetGroundDistanceM
+                          << " m, since last cold start: " << odometer.getData().coldStartGroundDistanceM
+                          << " m, accuracy (std): " << odometer.getData().resetGroundDistanceStd << " m" << std::endl;
             } break;
             case UBLOX::Message::AckAcknowledged: {
                 const std::vector<uint8_t> data = p.rawData();

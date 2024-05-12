@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <thread>
 
-#include <ublox/packet/Packet.hpp>
+#include <ublox/packet/Base.hpp>
 
 TEST(parsing, parse) {
     //TODO: implement

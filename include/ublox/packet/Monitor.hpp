@@ -1,10 +1,10 @@
-#ifndef MONITORPORTINFORMATIONPACKET_H
-#define MONITORPORTINFORMATIONPACKET_H
+#ifndef MONITOR_PACKET_H
+#define MONITOR_PACKET_H
 
-#include <ublox/packet/Packet.hpp>
+#include <ublox/packet/Base.hpp>
 
-namespace UBLOX::Packet {
-    class MonitorReceiverAndSoftwareVersion : public Base {
+namespace UBLOX::Packet::Mon {
+    class ReceiverAndSoftwareVersion : public Base {
     public:
         static constexpr Message MESSAGE = Message::MonReceiverAndSoftwareVersion;
         struct Data {
@@ -13,7 +13,7 @@ namespace UBLOX::Packet {
             std::vector<std::array<uint8_t, 30>> extensions{};
         };
 
-        explicit MonitorReceiverAndSoftwareVersion(Base &&raw) : Base(std::move(raw)) {}
+        explicit ReceiverAndSoftwareVersion(Base &&raw) : Base(std::move(raw)) {}
 
         [[nodiscard]] inline bool toData() {
             if (message() != MESSAGE) return false;
@@ -36,6 +36,6 @@ namespace UBLOX::Packet {
     private:
         Data data{};
     };
-}// namespace UBLOX::Packet
+}// namespace UBLOX::Packet::Mon
 
-#endif//MONITORPORTINFORMATIONPACKET_H
+#endif//MONITOR_PACKET_H
