@@ -145,7 +145,34 @@ namespace UBLOX::Packet::Cfg {
     public:
         MessageRate(const Message message, const uint8_t rate)
             : Base(Message::CfgMessageRate, {toRawClass(message), toRawId(message), rate}) {}
+
+        //FIXME(port-rates): verify which index belongs to which port
+        MessageRate(const Message message, const std::array<uint8_t, 6> rates)
+            : Base(Message::CfgMessageRate, {toRawClass(message), toRawId(message), rates[0], rates[1], rates[2],
+                                             rates[3], rates[4], rates[5]}) {}
+    };
+
+    class DifferentialGNSS : public Base {
+    public:
+        enum class Mode : uint8_t { RtkFloat = 2, RtkFixed = 3 };
+
+        explicit DifferentialGNSS(const Mode mode)
+            : Base(Message::CfgDGnss, {static_cast<uint8_t>(mode), 0x00, 0x00, 0x00}) {}
+    };
+
+    class NavigationRate : public Base {
+    public:
+        enum class TimeReference : uint16_t { Utc = 0, Gps = 1, Glonass = 2, Beidou = 3, Galileo = 4, Navic = 5 };
+
+        NavigationRate(const uint16_t measurementRateMillis, const uint16_t navigationRateCycles,
+                       const TimeReference reference)
+            : Base(Message::CfgNavigationMeasurementRate,
+                   {Serde::serializeLEInt(measurementRateMillis)[0], Serde::serializeLEInt(measurementRateMillis)[1],
+                    Serde::serializeLEInt(navigationRateCycles)[0], Serde::serializeLEInt(navigationRateCycles)[1],
+                    Serde::serializeLEInt(static_cast<uint16_t>(reference))[0],
+                    Serde::serializeLEInt(static_cast<uint16_t>(reference))[1]}) {}
     };
 }// namespace UBLOX::Packet::Cfg
+//[[deprecated]];// namespace UBLOX::Packet::Cfg
 
 #endif//CONFIGURATION_PACKET_H

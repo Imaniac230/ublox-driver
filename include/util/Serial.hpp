@@ -14,6 +14,8 @@ public:
         Baud38400 = B38400,
         Baud57600 = B57600,
         Baud115200 = B115200,
+        Baud230400 = B230400,
+        Baud460800 = B460800,
         Baud921600 = B921600,
     };
 
@@ -55,6 +57,10 @@ inline static constexpr uint32_t toRaw(const Serial::BaudRate baudRate) {
             return 57600;
         case Serial::BaudRate::Baud115200:
             return 115200;
+        case Serial::BaudRate::Baud230400:
+            return 230400;
+        case Serial::BaudRate::Baud460800:
+            return 460800;
         case Serial::BaudRate::Baud921600:
             return 921600;
         default:

@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <Driver.hpp>
+#include <DriverHelpers.hpp>
 #include <ublox/packet/Configuration.hpp>
 #include <ublox/packet/Monitor.hpp>
 #include <ublox/packet/Navigation.hpp>
@@ -39,6 +40,8 @@ Driver::Driver(Config configuration)
                         toRaw(config.port.newSetRate), UBLOX::Packet::Cfg::Port::InProtocol::Rtcm3,
                         UBLOX::Packet::Cfg::Port::OutProtocol::None, false)))
                 SPDLOG_WARN("Failed to send UART config packet for UART2.");
+            if (!sendPacket(UBLOX::Packet::Cfg::DifferentialGNSS(UBLOX::Packet::Cfg::DifferentialGNSS::Mode::RtkFixed)))
+                SPDLOG_WARN("Failed to send differential GNSS config packet.");
             break;
         default:
             break;
@@ -71,20 +74,24 @@ Driver::Config Driver::Config::fromJson(const std::string &path) {
 
 void Driver::configureExampleData() const {
     //Configure periodic messages
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavEcefPositionSolution, 0x01)))
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavEcefPositionSolution, 1)))
         SPDLOG_WARN("Failed to send message rate config packet for ECEF position.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavGeodeticPositionSolution, 0x01)))
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavGeodeticPositionSolution, 1)))
         SPDLOG_WARN("Failed to send message rate config packet for geodetic position.");
-    //    if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::CfgHighNavigationRate, {0x10, 0x00, 0x00, 0x00})))
-    //        SPDLOG_WARN("Failed to send packet.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavOdometerSolution, 0x01)))
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavOdometerSolution, 1)))
         SPDLOG_WARN("Failed to send message rate packet for odometer.");
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavReceiverNavigationStatus, 1)))
+        SPDLOG_WARN("Failed to send message rate packet for navigation status.");
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSurveyInData, 1)))
+        SPDLOG_WARN("Failed to send message rate packet for survey-in data.");
+
+    //Configure rate
+    if (!sendPacket(UBLOX::Packet::Cfg::NavigationRate(100, 5, UBLOX::Packet::Cfg::NavigationRate::TimeReference::Utc)))
+        SPDLOG_WARN("Failed to send measurement and navigation rate configuration packet.");
 
     //Poll message once
     if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::MonReceiverAndSoftwareVersion)))
         SPDLOG_WARN("Failed to send polling packet for receiver and software version.");
-    //    if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::NavEcefPositionSolution)))
-    //        SPDLOG_WARN("Failed to send polling packet for ECEF position.");
 }
 
 void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
@@ -136,6 +143,35 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
                           << " ms, since last reset: " << odometer.getData().resetGroundDistanceM
                           << " m, since last cold start: " << odometer.getData().coldStartGroundDistanceM
                           << " m, accuracy (std): " << odometer.getData().resetGroundDistanceStd << " m" << std::endl;
+            } break;
+            case UBLOX::Message::NavReceiverNavigationStatus: {
+                UBLOX::Packet::Nav::Status status(std::move(p));
+                if (!status.toData()) SPDLOG_WARN("Could not parse raw data to navigation status.");
+                std::cout << "NavReceiverNavigationStatus:" << std::endl;
+                std::cout << "iTOW: " << status.getData().iTOWTimestampMillis
+                          << " ms, fix type: " << status.getData().fixType
+                          << ", flags: " << flagsStr(status.getData().flags)
+                          << ", fix status: " << status.getData().fixStatus << ", flags2: " << status.getData().flags2
+                          << ", time to 1st fix: " << status.getData().timeToFirstFixMillis
+                          << " ms, elapsed since start: " << status.getData().elapsedSinceStartupMillis << " ms"
+                          << std::endl;
+            } break;
+            case UBLOX::Message::NavSurveyInData: {
+                UBLOX::Packet::Nav::SurveyInData data(std::move(p));
+                if (!data.toData()) SPDLOG_WARN("Could not parse raw data to survey-in data.");
+                std::cout << "NavSurveyInData:" << std::endl;
+                std::cout << "iTOW: " << data.getData().iTOWTimestampMillis
+                          << " ms, duration: " << data.getData().observationDurationSecs
+                          << " s, mean X: " << data.getData().meanXEcefCm
+                          << " cm, mean Y: " << data.getData().meanYEcefCm
+                          << " cm, mean Z: " << data.getData().meanZEcefCm
+                          << " cm, mean HP X: " << static_cast<float>(data.getData().meanHighPrecisionXEcef) * 0.01
+                          << " cm, mean HP Y: " << static_cast<float>(data.getData().meanHighPrecisionYEcef) * 0.01
+                          << " cm, mean HP Z: " << static_cast<float>(data.getData().meanHighPrecisionZEcef) * 0.01
+                          << " cm, mean accuracy: " << static_cast<float>(data.getData().meanPositionAccuracy) * 0.01
+                          << " cm, observations: " << data.getData().numberOfUsedObservations
+                          << ", valid: " << data.getData().valid << ", in progress: " << data.getData().inProgress
+                          << std::endl;
             } break;
             case UBLOX::Message::AckAcknowledged: {
                 const std::vector<uint8_t> data = p.rawData();

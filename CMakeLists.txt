@@ -38,7 +38,8 @@ add_library(${core_lib_name} STATIC ${core_sources})
 target_include_directories(${core_lib_name} PUBLIC include)
 target_link_libraries(${core_lib_name} ${utils_lib_name})
 
-add_executable(${exec_name} src/main.cpp src/Driver.cpp)
+# example driver application
+add_executable(${exec_name} src/main.cpp src/Driver.cpp src/DriverHelpers.cpp)
 target_link_libraries(${exec_name} ${core_lib_name})
 
 # development
