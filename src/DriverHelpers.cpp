@@ -58,6 +58,8 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status:
         case UBLOX::Packet::Nav::Status::Data::MapMatchingStatus::ValidUsedDeadReckoning:
             stream << "ValidUsedDeadReckoning";
             break;
+        default:
+            stream << "UNKNOWN";
     }
     stream << " }";
     return stream;
@@ -78,6 +80,8 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status:
         case UBLOX::Packet::Nav::Status::Data::PowerSaveModeState::Inactive:
             stream << "Inactive";
             break;
+        default:
+            stream << "UNKNOWN";
     }
     stream << ", spoofing detection: ";
     switch (static_cast<UBLOX::Packet::Nav::Status::Data::SpoofingDetectionState>(flag.spoofingDetectionState)) {
@@ -93,6 +97,8 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status:
         case UBLOX::Packet::Nav::Status::Data::SpoofingDetectionState::MultipleSpoofing:
             stream << "MultipleSpoofing";
             break;
+        default:
+            stream << "UNKNOWN";
     }
     stream << ", carrier phase range solution: ";
     switch (static_cast<UBLOX::Packet::Nav::Status::Data::CarrierPhaseRangeSolutionStatus>(
@@ -106,7 +112,135 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status:
         case UBLOX::Packet::Nav::Status::Data::CarrierPhaseRangeSolutionStatus::WithFixedAmbiguities:
             stream << "WithFixedAmbiguities";
             break;
+        default:
+            stream << "UNKNOWN";
     }
+    stream << " }";
+    return stream;
+}
+
+std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite &satellite) {
+    stream << "{";
+    stream << " gnss: ";
+    switch (satellite.gnssID) {
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::GNSSIdentifier::Gps:
+            stream << "GPS";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::GNSSIdentifier::Sbas:
+            stream << "SBAS";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::GNSSIdentifier::Galileo:
+            stream << "Galileo";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::GNSSIdentifier::BeiDou:
+            stream << "BeiDou";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::GNSSIdentifier::Qzss:
+            stream << "QZSS";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::GNSSIdentifier::Glonass:
+            stream << "GLONASS";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::GNSSIdentifier::NavIc:
+            stream << "NavIC";
+            break;
+        default:
+            stream << "UNKNOWN";
+    }
+    stream << ", satellite id: " << static_cast<int>(satellite.satelliteID)
+           << ", signal strength (cno): " << static_cast<int>(satellite.signalStrength)
+           << " dBHz, elevation: " << static_cast<int>(satellite.elevationDeg)
+           << " deg, azimuth: " << satellite.azimuthDeg
+           << " deg, pseudorange residual: " << satellite.pseudorangeResidualDm << " dm(?), signal quality: ";
+    //TODO: only one or multiple?
+    switch (static_cast<UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::SignalQuality>(
+            satellite.flags.signalQuality)) {
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::SignalQuality::NoSignal:
+            stream << "NoSignal";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::SignalQuality::Searching:
+            stream << "Searching";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::SignalQuality::Acquired:
+            stream << "Acquired";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::SignalQuality::DetectedUnusable:
+            stream << "DetectedUnusable";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::SignalQuality::CodeLockedTimeSynchronized:
+            stream << "CodeLockedTimeSynchronized";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::SignalQuality::CodeAndCarrier1LockedTimeSynchronized:
+            stream << "CodeAndCarrier1LockedTimeSynchronized";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::SignalQuality::CodeAndCarrier2LockedTimeSynchronized:
+            stream << "CodeAndCarrier2LockedTimeSynchronized";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::SignalQuality::CodeAndCarrier3LockedTimeSynchronized:
+            stream << "CodeAndCarrier3LockedTimeSynchronized";
+            break;
+        default:
+            stream << "UNKNOWN";
+    }
+    stream << ", used for nav: " << ((satellite.flags.usedForNavigation) ? "YES" : "NO") << ", health: ";
+    switch (static_cast<UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::Health>(satellite.flags.health)) {
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::Health::Unknown:
+            stream << "Unknown";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::Health::Healthy:
+            stream << "Healthy";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::Health::Unhealthy:
+            stream << "Unhealthy";
+            break;
+        default:
+            stream << "UNKNOWN";
+    }
+    stream << ", differential corrections "
+           << ((satellite.flags.differentialCorrectionsAvailable) ? "AVAILABLE" : "UNAVAILABLE")
+           << ", carrier smoothed pseudorange "
+           << ((satellite.flags.carrierSmoothedPseudorangeUsed) ? "USED" : "UNUSED") << ", orbit source: ";
+    //TODO: only one or multiple?
+    switch (static_cast<UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::OrbitSource>(satellite.flags.orbitSource)) {
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::OrbitSource::Unavailable:
+            stream << "Unavailable";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::OrbitSource::Ephemeris:
+            stream << "Ephemeris";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::OrbitSource::Almanac:
+            stream << "Almanac";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::OrbitSource::AssistNowOffline:
+            stream << "AssistNowOffline";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::OrbitSource::AssistNowAutonomous:
+            stream << "AssistNowAutonomous";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::OrbitSource::Other1:
+            stream << "Other1";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::OrbitSource::Other2:
+            stream << "Other2";
+            break;
+        case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::OrbitSource::Other3:
+            stream << "Other3";
+            break;
+        default:
+            stream << "UNKNOWN";
+    }
+    stream << ", ephemeris " << ((satellite.flags.ephemerisAvailable) ? "AVAILABLE" : "UNAVAILABLE") << ", almanac "
+           << ((satellite.flags.almanacAvailable) ? "AVAILABLE" : "UNAVAILABLE") << ", AssistNow offline "
+           << ((satellite.flags.assistNowOfflineDataAvailable) ? "AVAILABLE" : "UNAVAILABLE") << ", AssistNow auto "
+           << ((satellite.flags.assistNowAutonomousDataAvailable) ? "AVAILABLE" : "UNAVAILABLE") << ", sbas "
+           << ((satellite.flags.sbasCorrectionsUsed) ? "USED" : "UNUSED") << ", rtcm "
+           << ((satellite.flags.rtcmCorrectionsUsed) ? "USED" : "UNUSED") << ", qzss "
+           << ((satellite.flags.qzssSlasCorrectionsUsed) ? "USED" : "UNUSED") << ", spartn "
+           << ((satellite.flags.spartnCorrectionsUsed) ? "USED" : "UNUSED") << ", pseudorange "
+           << ((satellite.flags.pseudorangeCorrectionsUsed) ? "USED" : "UNUSED") << ", carrier range "
+           << ((satellite.flags.carrierRangeCorrectionsUsed) ? "USED" : "UNUSED") << ", doppler "
+           << ((satellite.flags.dopplerCorrectionsUsed) ? "USED" : "UNUSED") << ", clas "
+           << ((satellite.flags.clasCorrectionsUsed) ? "USED" : "UNUSED");
     stream << " }";
     return stream;
 }

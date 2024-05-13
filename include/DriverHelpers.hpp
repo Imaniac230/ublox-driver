@@ -12,6 +12,7 @@
 std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status::Data::FixType &fix);
 std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status::Data::FixStatus &status);
 std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status::Data::Flag2 &flag);
+std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite &satellite);
 
 std::string flagsStr(uint8_t flags);
 

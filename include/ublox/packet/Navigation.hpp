@@ -78,8 +78,8 @@ namespace UBLOX::Packet::Nav {
     public:
         static constexpr Message MESSAGE = Message::NavOdometerSolution;
         struct Data {
-            uint8_t version = 0;
-            //3 bytes reserved
+            uint8_t version = 0x00;
+            //3 bytes (uint8_t) reserved
             uint32_t iTOWTimestampMillis = 0;
             uint32_t resetGroundDistanceM = 0;
             uint32_t coldStartGroundDistanceM = 0;
@@ -209,8 +209,8 @@ namespace UBLOX::Packet::Nav {
     public:
         static constexpr Message MESSAGE = Message::NavSurveyInData;
         struct Data {
-            uint8_t version = 0;
-            //3 bytes reserved
+            uint8_t version = 0x00;
+            //3 bytes (uint8_t) reserved
             uint32_t iTOWTimestampMillis = 0;
             uint32_t observationDurationSecs = 0;
             int32_t meanXEcefCm = 0;
@@ -219,12 +219,12 @@ namespace UBLOX::Packet::Nav {
             int8_t meanHighPrecisionXEcef = 0;//given in 0.1 of mm -> meanXEcefCm + (0.01 * meanHighPrecisionXEcef)
             int8_t meanHighPrecisionYEcef = 0;//given in 0.1 of mm -> meanYEcefCm + (0.01 * meanHighPrecisionYEcef)
             int8_t meanHighPrecisionZEcef = 0;//given in 0.1 of mm -> meanZEcefCm + (0.01 * meanHighPrecisionZEcef)
-            //1 byte reserved
+            //1 byte (uint8_t) reserved
             uint32_t meanPositionAccuracy = 0;//given in 0.1 of mm
             uint32_t numberOfUsedObservations = 0;
             bool valid = false;
             bool inProgress = false;
-            //2 bytes reserved
+            //2 bytes (uint8_t) reserved
         };
 
         explicit SurveyInData(Base &&raw) : Base(std::move(raw)) {}
@@ -251,6 +251,114 @@ namespace UBLOX::Packet::Nav {
                     .valid = static_cast<bool>(Serde::deserializeLEInt<uint8_t>(&raw[offset += sizeof(uint32_t)])),
                     .inProgress = static_cast<bool>(Serde::deserializeLEInt<uint8_t>(&raw[offset += sizeof(uint8_t)])),
             };
+            return true;
+        }
+        [[nodiscard]] inline const Data &getData() const { return data; }
+
+    private:
+        Data data{};
+    };
+
+    class SatelliteInfo : public Base {
+    public:
+        static constexpr Message MESSAGE = Message::NavSatelliteInformation;
+        struct Data {
+            struct Satellite {
+                enum class GNSSIdentifier : uint8_t {
+                    Gps = 0,
+                    Sbas = 1,
+                    Galileo = 2,
+                    BeiDou = 3,
+                    Qzss = 5,
+                    Glonass = 6,
+                    NavIc = 7
+                };
+                enum class SignalQuality : uint8_t {
+                    NoSignal = 0,
+                    Searching = 1,
+                    Acquired = 2,
+                    DetectedUnusable = 3,
+                    CodeLockedTimeSynchronized = 4,
+                    CodeAndCarrier1LockedTimeSynchronized = 5,
+                    CodeAndCarrier2LockedTimeSynchronized = 6,
+                    CodeAndCarrier3LockedTimeSynchronized = 7
+                };
+                enum class Health : uint8_t { Unknown = 0, Healthy = 1, Unhealthy = 2 };
+                enum class OrbitSource : uint8_t {
+                    Unavailable = 0,
+                    Ephemeris = 1,
+                    Almanac = 2,
+                    AssistNowOffline = 3,
+                    AssistNowAutonomous = 4,
+                    Other1 = 5,
+                    Other2 = 6,
+                    Other3 = 7
+                };
+                struct __attribute__((__packed__)) __attribute__((aligned(1))) Flags {
+                    uint32_t signalQuality : 3 = static_cast<uint8_t>(SignalQuality::NoSignal);
+                    uint32_t usedForNavigation : 1 = 0;
+                    uint32_t health : 2 = static_cast<uint8_t>(Health::Unknown);
+                    uint32_t differentialCorrectionsAvailable : 1 = 0;
+                    uint32_t carrierSmoothedPseudorangeUsed : 1 = 0;
+                    uint32_t orbitSource : 3 = static_cast<uint8_t>(OrbitSource::Unavailable);
+                    uint32_t ephemerisAvailable : 1 = 0;
+                    uint32_t almanacAvailable : 1 = 0;
+                    uint32_t assistNowOfflineDataAvailable : 1 = 0;
+                    uint32_t assistNowAutonomousDataAvailable : 1 = 0;
+                    uint32_t reserved1 : 1 = 0;
+                    uint32_t sbasCorrectionsUsed : 1 = 0;
+                    uint32_t rtcmCorrectionsUsed : 1 = 0;
+                    uint32_t qzssSlasCorrectionsUsed : 1 = 0;
+                    uint32_t spartnCorrectionsUsed : 1 = 0;
+                    uint32_t pseudorangeCorrectionsUsed : 1 = 0;
+                    uint32_t carrierRangeCorrectionsUsed : 1 = 0;
+                    uint32_t dopplerCorrectionsUsed : 1 = 0;
+                    uint32_t clasCorrectionsUsed : 1 = 0;
+                    uint32_t reserved2 = 0;
+                };
+
+                GNSSIdentifier gnssID = GNSSIdentifier::Gps;
+                uint8_t satelliteID = 0;
+                uint8_t signalStrength = 0;
+                int8_t elevationDeg = 0;          //range: +/-90
+                int16_t azimuthDeg = 0;           //range: 0-360
+                int16_t pseudorangeResidualDm = 0;//TODO: verify unit
+                Flags flags{};
+            };
+
+            uint32_t iTOWTimestampMillis = 0;
+            uint8_t version = 0x01;
+            uint8_t numberOfSatellites = 0;
+            //2 bytes (uint8_t) reserved
+            std::list<Satellite> satellites{};
+        };
+
+        explicit SatelliteInfo(Base &&raw) : Base(std::move(raw)) {}
+
+        [[nodiscard]] inline bool toData() {
+            if (message() != MESSAGE) return false;
+
+            const std::vector<uint8_t> raw = rawData();
+            uint16_t offset = 0;
+            data = Data{
+                    .iTOWTimestampMillis = Serde::deserializeLEInt<uint32_t>(&raw[offset]),
+                    .version = Serde::deserializeLEInt<uint8_t>(&raw[offset += sizeof(uint32_t)]),
+                    .numberOfSatellites = Serde::deserializeLEInt<uint8_t>(&raw[offset += sizeof(uint8_t)]),
+            };
+            offset += 2 * sizeof(uint8_t);//NOTE: must skip the 2 reserved bytes
+            for (uint8_t satellite = 0; satellite < data.numberOfSatellites; ++satellite) {
+                data.satellites.push_back(Data::Satellite{
+                        .gnssID = static_cast<Data::Satellite::GNSSIdentifier>(
+                                Serde::deserializeLEInt<uint8_t>(&raw[offset])),
+                        .satelliteID = Serde::deserializeLEInt<uint8_t>(&raw[offset += sizeof(uint8_t)]),
+                        .signalStrength = Serde::deserializeLEInt<uint8_t>(&raw[offset += sizeof(uint8_t)]),
+                        .elevationDeg = Serde::deserializeLEInt<int8_t>(&raw[offset += sizeof(uint8_t)]),
+                        .azimuthDeg = Serde::deserializeLEInt<int16_t>(&raw[offset += sizeof(int8_t)]),
+                        .pseudorangeResidualDm = Serde::deserializeLEInt<int16_t>(&raw[offset += sizeof(int16_t)])});
+                const auto flags = Serde::deserializeLEInt<uint32_t>(&raw[offset += sizeof(int16_t)]);
+                data.satellites.end()->flags = *reinterpret_cast<const Data::Satellite::Flags *>(&flags);
+                offset += sizeof(uint32_t);
+            }
             return true;
         }
         [[nodiscard]] inline const Data &getData() const { return data; }

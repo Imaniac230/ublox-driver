@@ -84,6 +84,8 @@ void Driver::configureExampleData() const {
         SPDLOG_WARN("Failed to send message rate packet for navigation status.");
     if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSurveyInData, 1)))
         SPDLOG_WARN("Failed to send message rate packet for survey-in data.");
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSatelliteInformation, 1)))
+        SPDLOG_WARN("Failed to send message rate packet for satellite information.");
 
     //Configure rate
     if (!sendPacket(UBLOX::Packet::Cfg::NavigationRate(100, 5, UBLOX::Packet::Cfg::NavigationRate::TimeReference::Utc)))
@@ -172,6 +174,16 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
                           << " cm, observations: " << data.getData().numberOfUsedObservations
                           << ", valid: " << data.getData().valid << ", in progress: " << data.getData().inProgress
                           << std::endl;
+            } break;
+            case UBLOX::Message::NavSatelliteInformation: {
+                UBLOX::Packet::Nav::SatelliteInfo info(std::move(p));
+                if (!info.toData()) SPDLOG_WARN("Could not parse raw data to satellite information.");
+                std::cout << "NavSatelliteInformation:" << std::endl;
+                std::cout << "iTOW: " << info.getData().iTOWTimestampMillis
+                          << " ms, satellites used: " << static_cast<int>(info.getData().numberOfSatellites)
+                          << " -> { ";
+                for (const auto &s: info.getData().satellites) { std::cout << "\n\t" << s; }
+                std::cout << " }" << std::endl;
             } break;
             case UBLOX::Message::AckAcknowledged: {
                 const std::vector<uint8_t> data = p.rawData();
