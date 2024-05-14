@@ -32,6 +32,8 @@ Driver::Driver(Config configuration)
                         toRaw(config.port.newSetRate), UBLOX::Packet::Cfg::Port::InProtocol::None,
                         UBLOX::Packet::Cfg::Port::OutProtocol::Rtcm3, false)))
                 SPDLOG_WARN("Failed to send UART config packet for UART2.");
+            if (!sendPacket(UBLOX::Packet::Cfg::TimeMode(20 * 60, 3000 * 10)))
+                SPDLOG_WARN("Failed to send time mode config packet for survey-in.");
             break;
         case Driver::Type::Rover:
             if (!sendPacket(UBLOX::Packet::Cfg::UART(

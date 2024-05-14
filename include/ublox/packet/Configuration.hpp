@@ -3,6 +3,8 @@
 
 #include <ublox/packet/Base.hpp>
 
+//FIXME(deprecated): this whole configuration structure is deprecated in newer versions,
+//  transfer to the new message definitions
 namespace UBLOX::Packet::Cfg {
     class Port : public Base {
     public:
@@ -143,13 +145,22 @@ namespace UBLOX::Packet::Cfg {
 
     class MessageRate : public Base {
     public:
+        //FIXME(port-rates): verify which index belongs to which port
+        struct Rates {
+            uint8_t i2c = 0;
+            uint8_t uart1 = 0;
+            uint8_t uart2 = 0;
+            uint8_t usb = 0;
+            uint8_t spi = 0;
+            uint8_t unknown = 0;
+        };
+
         MessageRate(const Message message, const uint8_t rate)
             : Base(Message::CfgMessageRate, {toRawClass(message), toRawId(message), rate}) {}
 
-        //FIXME(port-rates): verify which index belongs to which port
-        MessageRate(const Message message, const std::array<uint8_t, 6> rates)
-            : Base(Message::CfgMessageRate, {toRawClass(message), toRawId(message), rates[0], rates[1], rates[2],
-                                             rates[3], rates[4], rates[5]}) {}
+        MessageRate(const Message message, const Rates rates)
+            : Base(Message::CfgMessageRate, {toRawClass(message), toRawId(message), rates.i2c, rates.uart1, rates.uart2,
+                                             rates.usb, rates.spi, rates.unknown}) {}
     };
 
     class DifferentialGNSS : public Base {
@@ -171,6 +182,150 @@ namespace UBLOX::Packet::Cfg {
                     Serde::serializeLEInt(navigationRateCycles)[0], Serde::serializeLEInt(navigationRateCycles)[1],
                     Serde::serializeLEInt(static_cast<uint16_t>(reference))[0],
                     Serde::serializeLEInt(static_cast<uint16_t>(reference))[1]}) {}
+    };
+
+    class TimeMode : public Base {
+    public:
+        enum class Mode : uint8_t { Disabled = 0, SurveyIn = 1, Fixed = 2 };
+        struct PositionECEFOrLLA {
+            int32_t XOrLatitude = 0; //cm or degree * 1e-7
+            int32_t YOrLongitude = 0;//cm or degree * 1e-7
+            int32_t ZOrAltitude = 0; //cm or degree * 1e-7
+            uint32_t accuracy = 0;   //0.1 of mm
+        };
+        struct HighPrecisionPositionECEFOrLLA {
+            int8_t XOrLatitude = 0; //0.1 of mm or degree * 1e-9
+            int8_t YOrLongitude = 0;//0.1 of mm or degree * 1e-9
+            int8_t ZOrAltitude = 0; //0.1 of mm or degree * 1e-9
+        };
+
+        TimeMode()
+            : Base(Message::CfgTimeMode3, {0x00,
+                                           0x00,//reserved
+                                           static_cast<uint8_t>(Mode::Disabled),
+                                           0x00,//given position mode, only first bit: 0 -> ECEF, 1 -> LLA
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.XOrLatitude)[0],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.XOrLatitude)[1],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.XOrLatitude)[2],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.XOrLatitude)[3],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.YOrLongitude)[0],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.YOrLongitude)[1],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.YOrLongitude)[2],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.YOrLongitude)[3],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.ZOrAltitude)[0],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.ZOrAltitude)[1],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.ZOrAltitude)[2],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.ZOrAltitude)[3],
+                                           HighPrecisionPositionECEFOrLLA{}.XOrLatitude,
+                                           HighPrecisionPositionECEFOrLLA{}.YOrLongitude,
+                                           HighPrecisionPositionECEFOrLLA{}.ZOrAltitude,
+                                           0x00,//reserved
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.accuracy)[0],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.accuracy)[1],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.accuracy)[2],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.accuracy)[3],
+                                           0x00,//survey-in minimum duration
+                                           0x00,
+                                           0x00,
+                                           0x00,
+                                           0x00,//survey-in position accuracy limit
+                                           0x00,
+                                           0x00,
+                                           0x00,
+                                           0x00,//8 bytes reserved
+                                           0x00,
+                                           0x00,
+                                           0x00,
+                                           0x00,
+                                           0x00,
+                                           0x00,
+                                           0x00}) {}
+
+        TimeMode(const PositionECEFOrLLA position, const HighPrecisionPositionECEFOrLLA highPrecisionPosition,
+                 const bool positionInLla = false)
+            : Base(Message::CfgTimeMode3,
+                   {0x00,
+                    0x00,//reserved
+                    static_cast<uint8_t>(Mode::Fixed),
+                    static_cast<uint8_t>(positionInLla),//given position mode, only first bit: 0 -> ECEF, 1 -> LLA
+                    Serde::serializeLEInt(position.XOrLatitude)[0],
+                    Serde::serializeLEInt(position.XOrLatitude)[1],
+                    Serde::serializeLEInt(position.XOrLatitude)[2],
+                    Serde::serializeLEInt(position.XOrLatitude)[3],
+                    Serde::serializeLEInt(position.YOrLongitude)[0],
+                    Serde::serializeLEInt(position.YOrLongitude)[1],
+                    Serde::serializeLEInt(position.YOrLongitude)[2],
+                    Serde::serializeLEInt(position.YOrLongitude)[3],
+                    Serde::serializeLEInt(position.ZOrAltitude)[0],
+                    Serde::serializeLEInt(position.ZOrAltitude)[1],
+                    Serde::serializeLEInt(position.ZOrAltitude)[2],
+                    Serde::serializeLEInt(position.ZOrAltitude)[3],
+                    static_cast<uint8_t>(highPrecisionPosition.XOrLatitude),
+                    static_cast<uint8_t>(highPrecisionPosition.YOrLongitude),
+                    static_cast<uint8_t>(highPrecisionPosition.ZOrAltitude),
+                    0x00,//reserved
+                    Serde::serializeLEInt(position.accuracy)[0],
+                    Serde::serializeLEInt(position.accuracy)[1],
+                    Serde::serializeLEInt(position.accuracy)[2],
+                    Serde::serializeLEInt(position.accuracy)[3],
+                    0x00,//survey-in minimum duration
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,//survey-in position accuracy limit
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,//8 bytes reserved
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00}) {}
+
+        TimeMode(const uint32_t minimumDurationSecs, const uint32_t positionAccuracyLimit /*0.1 of mm*/)
+            : Base(Message::CfgTimeMode3, {0x00,
+                                           0x00,//reserved
+                                           static_cast<uint8_t>(Mode::SurveyIn),
+                                           0x00,//given position mode, only first bit: 0 -> ECEF, 1 -> LLA
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.XOrLatitude)[0],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.XOrLatitude)[1],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.XOrLatitude)[2],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.XOrLatitude)[3],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.YOrLongitude)[0],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.YOrLongitude)[1],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.YOrLongitude)[2],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.YOrLongitude)[3],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.ZOrAltitude)[0],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.ZOrAltitude)[1],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.ZOrAltitude)[2],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.ZOrAltitude)[3],
+                                           HighPrecisionPositionECEFOrLLA{}.XOrLatitude,
+                                           HighPrecisionPositionECEFOrLLA{}.YOrLongitude,
+                                           HighPrecisionPositionECEFOrLLA{}.ZOrAltitude,
+                                           0x00,//reserved
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.accuracy)[0],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.accuracy)[1],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.accuracy)[2],
+                                           Serde::serializeLEInt(PositionECEFOrLLA{}.accuracy)[3],
+                                           Serde::serializeLEInt(minimumDurationSecs)[0],
+                                           Serde::serializeLEInt(minimumDurationSecs)[1],
+                                           Serde::serializeLEInt(minimumDurationSecs)[2],
+                                           Serde::serializeLEInt(minimumDurationSecs)[3],
+                                           Serde::serializeLEInt(positionAccuracyLimit)[0],
+                                           Serde::serializeLEInt(positionAccuracyLimit)[1],
+                                           Serde::serializeLEInt(positionAccuracyLimit)[2],
+                                           Serde::serializeLEInt(positionAccuracyLimit)[3],
+                                           0x00,//8 bytes reserved
+                                           0x00,
+                                           0x00,
+                                           0x00,
+                                           0x00,
+                                           0x00,
+                                           0x00,
+                                           0x00}) {}
     };
 }// namespace UBLOX::Packet::Cfg
 //[[deprecated]];// namespace UBLOX::Packet::Cfg
