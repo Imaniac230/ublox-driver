@@ -82,7 +82,7 @@ namespace UBLOX {
                 stream << "Rtcm";
                 break;
             default:
-                stream << "UNKNOWN";
+                stream << "UNSUPPORTED CLASS";
         }
         return stream;
     }
@@ -236,6 +236,7 @@ namespace UBLOX {
         RxmRtcmInputStatus = MessageClass::Rxm + 0x32,
         RxmBroadcastNavigationDataSubframe = MessageClass::Rxm + 0x13,
         RxmSvStatusInfo = MessageClass::Rxm + 0x20,
+        RxmDifferentialCorrectionInputStatus = MessageClass::Rxm + 0x34,
 
         // Security Feature Messages
         SecUniqueChipId = MessageClass::Sec + 0x03,

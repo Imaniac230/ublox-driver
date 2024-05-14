@@ -5,6 +5,7 @@
 #include <ublox/packet/Configuration.hpp>
 #include <ublox/packet/Monitor.hpp>
 #include <ublox/packet/Navigation.hpp>
+#include <ublox/packet/Receiver.hpp>
 
 #include <spdlog/spdlog.h>
 
@@ -34,22 +35,22 @@ Driver::Driver(Config configuration)
             if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1005,
                                                             UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
                 SPDLOG_WARN("Failed to send message rate config packet for rtcm 1005.");
-            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1074,
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1077,
                                                             UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
-                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1074.");
-            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1084,
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1077.");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1087,
                                                             UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
-                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1084.");
-            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1094,
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1087.");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1097,
                                                             UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
-                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1094.");
-            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1124,
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1097.");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1127,
                                                             UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
-                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1124.");
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1127.");
             if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1230,
                                                             UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
                 SPDLOG_WARN("Failed to send message rate config packet for rtcm 1230.");
-            if (!sendPacket(UBLOX::Packet::Cfg::TimeMode(20 * 60, 3000 * 10)))
+            if (!sendPacket(UBLOX::Packet::Cfg::TimeMode(3 * 60, 50000 * 10)))
                 SPDLOG_WARN("Failed to send time mode config packet for survey-in.");
             break;
         case Driver::Type::Rover:
@@ -67,6 +68,10 @@ Driver::Driver(Config configuration)
         default:
             break;
     }
+
+    //Configure rate
+    if (!sendPacket(UBLOX::Packet::Cfg::NavigationRate(25, 3, UBLOX::Packet::Cfg::NavigationRate::TimeReference::Utc)))
+        SPDLOG_WARN("Failed to send measurement and navigation rate configuration packet.");
 
     configureExampleData();
 
@@ -95,26 +100,24 @@ Driver::Config Driver::Config::fromJson(const std::string &path) {
 
 void Driver::configureExampleData() const {
     //Configure periodic messages
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavEcefPositionSolution, 1)))
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavEcefPositionSolution, 10)))
         SPDLOG_WARN("Failed to send message rate config packet for ECEF position.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavGeodeticPositionSolution, 1)))
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavGeodeticPositionSolution, 10)))
         SPDLOG_WARN("Failed to send message rate config packet for geodetic position.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavOdometerSolution, 1)))
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavOdometerSolution, 10)))
         SPDLOG_WARN("Failed to send message rate packet for odometer.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavReceiverNavigationStatus, 1)))
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavReceiverNavigationStatus, 10)))
         SPDLOG_WARN("Failed to send message rate packet for navigation status.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSurveyInData, 1)))
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSurveyInData, 10)))
         SPDLOG_WARN("Failed to send message rate packet for survey-in data.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSatelliteInformation, 1)))
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSatelliteInformation, 10)))
         SPDLOG_WARN("Failed to send message rate packet for satellite information.");
-
-    //Configure rate
-    if (!sendPacket(UBLOX::Packet::Cfg::NavigationRate(100, 5, UBLOX::Packet::Cfg::NavigationRate::TimeReference::Utc)))
-        SPDLOG_WARN("Failed to send measurement and navigation rate configuration packet.");
 
     //Poll message once
     if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::MonReceiverAndSoftwareVersion)))
         SPDLOG_WARN("Failed to send polling packet for receiver and software version.");
+    if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::MonGnssInformationMessage)))
+        SPDLOG_WARN("Failed to send polling packet for gnss information.");
 }
 
 void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
@@ -123,7 +126,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
             case UBLOX::Message::NavEcefPositionSolution: {
                 UBLOX::Packet::Nav::PositionECEF positionEcef(std::move(p));
                 if (!positionEcef.toData()) SPDLOG_WARN("Could not parse raw data to ECEF position.");
-                std::cout << "NavEcefPositionSolution:" << std::endl;
+                std::cout << "\tNavEcefPositionSolution:" << std::endl;
                 std::cout << "iTOW: " << positionEcef.getData().iTOWTimestampMillis
                           << " ms, X: " << positionEcef.getData().XCm << " cm, Y: " << positionEcef.getData().YCm
                           << " cm, Z: " << positionEcef.getData().ZCm
@@ -132,7 +135,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
             case UBLOX::Message::NavGeodeticPositionSolution: {
                 UBLOX::Packet::Nav::PositionLLH positionLlh(std::move(p));
                 if (!positionLlh.toData()) SPDLOG_WARN("Could not parse raw data to LLH position.");
-                std::cout << "NavGeodeticPositionSolution:" << std::endl;
+                std::cout << "\tNavGeodeticPositionSolution:" << std::endl;
                 std::cout << "iTOW: " << positionLlh.getData().iTOWTimestampMillis
                           << " ms, lon: " << std::setprecision(9)
                           << static_cast<float>(positionLlh.getData().longitude) * 1e-7
@@ -147,7 +150,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
             case UBLOX::Message::MonReceiverAndSoftwareVersion: {
                 UBLOX::Packet::Mon::ReceiverAndSoftwareVersion versions(std::move(p));
                 if (!versions.toData()) SPDLOG_WARN("Could not parse raw data to version information.");
-                std::cout << "MonReceiverAndSoftwareVersion:" << std::endl;
+                std::cout << "\tMonReceiverAndSoftwareVersion:" << std::endl;
                 std::cout << "SW version: "
                           << std::string(reinterpret_cast<const char *>(versions.getData().swVersion.data()))
                           << ", HW version: "
@@ -161,7 +164,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
             case UBLOX::Message::NavOdometerSolution: {
                 UBLOX::Packet::Nav::Odometer odometer(std::move(p));
                 if (!odometer.toData()) SPDLOG_WARN("Could not parse raw data to odometer.");
-                std::cout << "NavOdometerSolution:" << std::endl;
+                std::cout << "\tNavOdometerSolution:" << std::endl;
                 std::cout << "iTOW: " << odometer.getData().iTOWTimestampMillis
                           << " ms, since last reset: " << odometer.getData().resetGroundDistanceM
                           << " m, since last cold start: " << odometer.getData().coldStartGroundDistanceM
@@ -170,7 +173,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
             case UBLOX::Message::NavReceiverNavigationStatus: {
                 UBLOX::Packet::Nav::Status status(std::move(p));
                 if (!status.toData()) SPDLOG_WARN("Could not parse raw data to navigation status.");
-                std::cout << "NavReceiverNavigationStatus:" << std::endl;
+                std::cout << "\tNavReceiverNavigationStatus:" << std::endl;
                 std::cout << "iTOW: " << status.getData().iTOWTimestampMillis
                           << " ms, fix type: " << status.getData().fixType
                           << ", flags: " << flagsStr(status.getData().flags)
@@ -182,7 +185,7 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
             case UBLOX::Message::NavSurveyInData: {
                 UBLOX::Packet::Nav::SurveyInData data(std::move(p));
                 if (!data.toData()) SPDLOG_WARN("Could not parse raw data to survey-in data.");
-                std::cout << "NavSurveyInData:" << std::endl;
+                std::cout << "\tNavSurveyInData:" << std::endl;
                 std::cout << "iTOW: " << data.getData().iTOWTimestampMillis
                           << " ms, duration: " << data.getData().observationDurationSecs
                           << " s, mean X: " << data.getData().meanXEcefCm
@@ -199,12 +202,36 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
             case UBLOX::Message::NavSatelliteInformation: {
                 UBLOX::Packet::Nav::SatelliteInfo info(std::move(p));
                 if (!info.toData()) SPDLOG_WARN("Could not parse raw data to satellite information.");
-                std::cout << "NavSatelliteInformation:" << std::endl;
+                std::cout << "\tNavSatelliteInformation:" << std::endl;
                 std::cout << "iTOW: " << info.getData().iTOWTimestampMillis
                           << " ms, satellites used: " << static_cast<int>(info.getData().numberOfSatellites)
                           << " -> { ";
-                for (const auto &s: info.getData().satellites) { std::cout << "\n\t" << s; }
+                for (const auto &s: info.getData().satellites) { std::cout << "\n " << s; }
                 std::cout << " }" << std::endl;
+            } break;
+            case UBLOX::Message::MonGnssInformationMessage: {
+                UBLOX::Packet::Mon::GNSSInformation info(std::move(p));
+                if (!info.toData()) SPDLOG_WARN("Could not parse raw data to gnss information.");
+                std::cout << "\tMonGnssInformationMessage:" << std::endl;
+                std::cout << "supported: " << info.getData().supportedGnss
+                          << ", default: " << info.getData().defaultGnss << ", enabled: " << info.getData().enabledGnss
+                          << std::endl;
+            } break;
+            case UBLOX::Message::RxmDifferentialCorrectionInputStatus: {
+                UBLOX::Packet::Rxm::DifferentialCorrectionsStatus status(std::move(p));
+                if (!status.toData()) SPDLOG_WARN("Could not parse raw data to differential correction input status.");
+                SPDLOG_INFO("Differential correction message parsed:");
+                std::cout << "\tRxmDifferentialCorrectionInputStatus:" << std::endl;
+                std::cout << "status: " << status.getData().status << ", type" << status.getData().type
+                          << ", sub type: " << status.getData().subType << std::endl;
+            } break;
+            case UBLOX::Message::RxmRtcmInputStatus: {
+                UBLOX::Packet::Rxm::RTCMStatus status(std::move(p));
+                if (!status.toData()) SPDLOG_WARN("Could not parse raw data to rtcm input status.");
+                SPDLOG_INFO("RTCM message parsed:");
+                std::cout << "\tRxmRtcmInputStatus:" << std::endl;
+                std::cout << "status: " << status.getData().status << ", sub type" << status.getData().subType
+                          << ", base id: " << status.getData().referenceStationId << std::endl;
             } break;
             case UBLOX::Message::AckAcknowledged: {
                 const std::vector<uint8_t> data = p.rawData();

@@ -345,7 +345,7 @@ namespace UBLOX::Packet::Nav {
                     .version = Serde::deserializeLEInt<uint8_t>(&raw[offset += sizeof(uint32_t)]),
                     .numberOfSatellites = Serde::deserializeLEInt<uint8_t>(&raw[offset += sizeof(uint8_t)]),
             };
-            offset += 2 * sizeof(uint8_t);//NOTE: must skip the 2 reserved bytes
+            offset += 2 * sizeof(uint8_t);//NOTE: must skip 2 reserved bytes
             for (uint8_t satellite = 0; satellite < data.numberOfSatellites; ++satellite) {
                 data.satellites.push_back(Data::Satellite{
                         .gnssID = static_cast<Data::Satellite::GNSSIdentifier>(

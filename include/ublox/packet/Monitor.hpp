@@ -36,6 +36,53 @@ namespace UBLOX::Packet::Mon {
     private:
         Data data{};
     };
+
+    class GNSSInformation : public Base {
+    public:
+        static constexpr Message MESSAGE = Message::MonGnssInformationMessage;
+        struct Data {
+            struct __attribute__((__packed__)) __attribute__((aligned(1))) Flag {
+                uint8_t gps : 1 = 0;
+                uint8_t glonass : 1 = 0;
+                uint8_t beidou : 1 = 0;
+                uint8_t galileo : 1 = 0;
+                uint8_t reserved = 0;
+            };
+
+            uint8_t version = 0x00;
+            Flag supportedGnss{};
+            Flag defaultGnss{};
+            Flag enabledGnss{};
+            uint8_t maximumConcurrentGnss = 0;
+            //3 bytes (uint8_1) reserved
+        };
+
+        explicit GNSSInformation(Base &&raw) : Base(std::move(raw)) {}
+
+        [[nodiscard]] inline bool toData() {
+            if (message() != MESSAGE) return false;
+
+            const std::vector<uint8_t> raw = rawData();
+            uint16_t offset = 0;
+            static constexpr uint16_t skippedDataOffset = 3 * sizeof(Data::Flag);
+            data = Data{
+                    .version = Serde::deserializeLEInt<uint8_t>(&raw[offset]),
+                    .maximumConcurrentGnss =
+                            Serde::deserializeLEInt<uint8_t>(&raw[offset + sizeof(uint8_t) + skippedDataOffset]),
+            };
+            const auto supportedGnss = Serde::deserializeLEInt<uint8_t>(&raw[offset += sizeof(uint8_t)]);
+            data.supportedGnss = *reinterpret_cast<const Data::Flag *>(&supportedGnss);
+            const auto defaultGnss = Serde::deserializeLEInt<uint8_t>(&raw[offset += sizeof(Data::Flag)]);
+            data.defaultGnss = *reinterpret_cast<const Data::Flag *>(&defaultGnss);
+            const auto enabledGnss = Serde::deserializeLEInt<uint8_t>(&raw[offset += sizeof(Data::Flag)]);
+            data.enabledGnss = *reinterpret_cast<const Data::Flag *>(&enabledGnss);
+            return true;
+        }
+        [[nodiscard]] inline const Data &getData() const { return data; }
+
+    private:
+        Data data{};
+    };
 }// namespace UBLOX::Packet::Mon
 
 #endif//MONITOR_PACKET_H

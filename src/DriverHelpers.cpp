@@ -21,7 +21,7 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status:
             stream << "Time";
             break;
         default:
-            stream << "UNKNOWN";
+            stream << "UNSUPPORTED FIX";
     }
     return stream;
 }
@@ -42,8 +42,8 @@ std::string flagsStr(const uint8_t flag) {
 
 std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status::Data::FixStatus &status) {
     stream << "{";
-    stream << " differential corrections " << ((status.differentialCorrectionsAvailable) ? "AVAILABLE" : "UNAVAILABLE")
-           << ", carrier phase range solution " << ((status.carrierPhaseRangeSolutionValid) ? "VALID" : "INVALID")
+    stream << " differential corrections " << (status.differentialCorrectionsAvailable ? "AVAILABLE" : "UNAVAILABLE")
+           << ", carrier phase range solution " << (status.carrierPhaseRangeSolutionValid ? "VALID" : "INVALID")
            << ", map matching: ";
     switch (static_cast<UBLOX::Packet::Nav::Status::Data::MapMatchingStatus>(status.mapMatchingStatus)) {
         case UBLOX::Packet::Nav::Status::Data::MapMatchingStatus::None:
@@ -59,7 +59,7 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status:
             stream << "ValidUsedDeadReckoning";
             break;
         default:
-            stream << "UNKNOWN";
+            stream << "UNSUPPORTED STATUS";
     }
     stream << " }";
     return stream;
@@ -81,7 +81,7 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status:
             stream << "Inactive";
             break;
         default:
-            stream << "UNKNOWN";
+            stream << "UNSUPPORTED FLAG";
     }
     stream << ", spoofing detection: ";
     switch (static_cast<UBLOX::Packet::Nav::Status::Data::SpoofingDetectionState>(flag.spoofingDetectionState)) {
@@ -98,7 +98,7 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status:
             stream << "MultipleSpoofing";
             break;
         default:
-            stream << "UNKNOWN";
+            stream << "UNSUPPORTED STATE";
     }
     stream << ", carrier phase range solution: ";
     switch (static_cast<UBLOX::Packet::Nav::Status::Data::CarrierPhaseRangeSolutionStatus>(
@@ -113,7 +113,7 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Status:
             stream << "WithFixedAmbiguities";
             break;
         default:
-            stream << "UNKNOWN";
+            stream << "UNSUPPORTED STATUS";
     }
     stream << " }";
     return stream;
@@ -145,7 +145,7 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Satelli
             stream << "NavIC";
             break;
         default:
-            stream << "UNKNOWN";
+            stream << "UNSUPPORTED SATELLITE";
     }
     stream << ", satellite id: " << static_cast<int>(satellite.satelliteID)
            << ", signal strength (cno): " << static_cast<int>(satellite.signalStrength)
@@ -180,9 +180,9 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Satelli
             stream << "CodeAndCarrier3LockedTimeSynchronized";
             break;
         default:
-            stream << "UNKNOWN";
+            stream << "UNSUPPORTED QUALITY";
     }
-    stream << ", used for nav: " << ((satellite.flags.usedForNavigation) ? "YES" : "NO") << ", health: ";
+    stream << ", used for nav: " << (satellite.flags.usedForNavigation ? "YES" : "NO") << ", health: ";
     switch (static_cast<UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::Health>(satellite.flags.health)) {
         case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::Health::Unknown:
             stream << "Unknown";
@@ -194,12 +194,12 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Satelli
             stream << "Unhealthy";
             break;
         default:
-            stream << "UNKNOWN";
+            stream << "UNSUPPORTED HEALTH";
     }
     stream << ", differential corrections "
-           << ((satellite.flags.differentialCorrectionsAvailable) ? "AVAILABLE" : "UNAVAILABLE")
-           << ", carrier smoothed pseudorange "
-           << ((satellite.flags.carrierSmoothedPseudorangeUsed) ? "USED" : "UNUSED") << ", orbit source: ";
+           << (satellite.flags.differentialCorrectionsAvailable ? "AVAILABLE" : "UNAVAILABLE")
+           << ", carrier smoothed pseudorange " << (satellite.flags.carrierSmoothedPseudorangeUsed ? "USED" : "UNUSED")
+           << ", orbit source: ";
     //TODO: only one or multiple?
     switch (static_cast<UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::OrbitSource>(satellite.flags.orbitSource)) {
         case UBLOX::Packet::Nav::SatelliteInfo::Data::Satellite::OrbitSource::Unavailable:
@@ -227,20 +227,78 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Satelli
             stream << "Other3";
             break;
         default:
-            stream << "UNKNOWN";
+            stream << "UNSUPPORTED ORBIT";
     }
-    stream << ", ephemeris " << ((satellite.flags.ephemerisAvailable) ? "AVAILABLE" : "UNAVAILABLE") << ", almanac "
-           << ((satellite.flags.almanacAvailable) ? "AVAILABLE" : "UNAVAILABLE") << ", AssistNow offline "
-           << ((satellite.flags.assistNowOfflineDataAvailable) ? "AVAILABLE" : "UNAVAILABLE") << ", AssistNow auto "
-           << ((satellite.flags.assistNowAutonomousDataAvailable) ? "AVAILABLE" : "UNAVAILABLE") << ", sbas "
-           << ((satellite.flags.sbasCorrectionsUsed) ? "USED" : "UNUSED") << ", rtcm "
-           << ((satellite.flags.rtcmCorrectionsUsed) ? "USED" : "UNUSED") << ", qzss "
-           << ((satellite.flags.qzssSlasCorrectionsUsed) ? "USED" : "UNUSED") << ", spartn "
-           << ((satellite.flags.spartnCorrectionsUsed) ? "USED" : "UNUSED") << ", pseudorange "
-           << ((satellite.flags.pseudorangeCorrectionsUsed) ? "USED" : "UNUSED") << ", carrier range "
-           << ((satellite.flags.carrierRangeCorrectionsUsed) ? "USED" : "UNUSED") << ", doppler "
-           << ((satellite.flags.dopplerCorrectionsUsed) ? "USED" : "UNUSED") << ", clas "
-           << ((satellite.flags.clasCorrectionsUsed) ? "USED" : "UNUSED");
+    stream << ", ephemeris " << (satellite.flags.ephemerisAvailable ? "AVAILABLE" : "UNAVAILABLE") << ", almanac "
+           << (satellite.flags.almanacAvailable ? "AVAILABLE" : "UNAVAILABLE") << ", AssistNow offline "
+           << (satellite.flags.assistNowOfflineDataAvailable ? "AVAILABLE" : "UNAVAILABLE") << ", AssistNow auto "
+           << (satellite.flags.assistNowAutonomousDataAvailable ? "AVAILABLE" : "UNAVAILABLE") << ", sbas "
+           << (satellite.flags.sbasCorrectionsUsed ? "USED" : "UNUSED") << ", rtcm "
+           << (satellite.flags.rtcmCorrectionsUsed ? "USED" : "UNUSED") << ", qzss "
+           << (satellite.flags.qzssSlasCorrectionsUsed ? "USED" : "UNUSED") << ", spartn "
+           << (satellite.flags.spartnCorrectionsUsed ? "USED" : "UNUSED") << ", pseudorange "
+           << (satellite.flags.pseudorangeCorrectionsUsed ? "USED" : "UNUSED") << ", carrier range "
+           << (satellite.flags.carrierRangeCorrectionsUsed ? "USED" : "UNUSED") << ", doppler "
+           << (satellite.flags.dopplerCorrectionsUsed ? "USED" : "UNUSED") << ", clas "
+           << (satellite.flags.clasCorrectionsUsed ? "USED" : "UNUSED");
     stream << " }";
+    return stream;
+}
+
+std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Mon::GNSSInformation::Data::Flag &flag) {
+    stream << "{ gps: " << (flag.gps ? "YES" : "NO") << ", glonass: " << (flag.glonass ? "YES" : "NO")
+           << ", beidou: " << (flag.beidou ? "YES" : "NO") << ", galileo: " << (flag.galileo ? "YES" : "NO") << " }";
+    return stream;
+}
+
+std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Rxm::StatusFlag &flag) {
+    switch (flag) {
+        case UBLOX::Packet::Rxm::StatusFlag::Unknown:
+            stream << "Unknown";
+            break;
+        case UBLOX::Packet::Rxm::StatusFlag::Negative:
+            stream << "NO";
+            break;
+        case UBLOX::Packet::Rxm::StatusFlag::Positive:
+            stream << "YES";
+            break;
+        default:
+            stream << "UNSUPPORTED FLAG";
+    }
+    return stream;
+}
+
+std::ostream &operator<<(std::ostream &stream,
+                         const UBLOX::Packet::Rxm::DifferentialCorrectionsStatus::Data::Status &status) {
+    stream << "{ protocol: ";
+    switch (static_cast<UBLOX::Packet::Rxm::DifferentialCorrectionsStatus::Data::Protocol>(status.protocol)) {
+        case UBLOX::Packet::Rxm::DifferentialCorrectionsStatus::Data::Protocol::Unknown:
+            stream << "Unknown";
+            break;
+        case UBLOX::Packet::Rxm::DifferentialCorrectionsStatus::Data::Protocol::Rtcm3:
+            stream << "Rtcm3";
+            break;
+        case UBLOX::Packet::Rxm::DifferentialCorrectionsStatus::Data::Protocol::Spartn:
+            stream << "Spartn";
+            break;
+        case UBLOX::Packet::Rxm::DifferentialCorrectionsStatus::Data::Protocol::PointToMultipoint:
+            stream << "PointToMultipoint";
+            break;
+        case UBLOX::Packet::Rxm::DifferentialCorrectionsStatus::Data::Protocol::QzssL6:
+            stream << "QzssL6";
+            break;
+        default:
+            stream << "UNSUPPORTED PROTOCOL";
+    }
+    stream << ", error: " << status.error << ", used: " << status.used << ", corection id: " << status.correctionId
+           << ", type " << (status.typeValid ? "VALID" : "INVALID") << ", sub type "
+           << (status.subTypeValid ? "VALID" : "INVALID")
+           << ", input handling support: " << (status.inputHandlingSupported ? "YES" : "NO")
+           << ", encrypted: " << status.encrypted << ", decrypted: " << status.decrypted << " }";
+    return stream;
+}
+
+std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Rxm::RTCMStatus::Data::Status &status) {
+    stream << "{ crc " << (status.crcFailed ? "FAILED" : "OK") << ", used: " << status.used << " }";
     return stream;
 }
