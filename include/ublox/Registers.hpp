@@ -27,6 +27,7 @@ namespace UBLOX {
         Log = 0x21,
         Sec = 0x27,
         Hnr = 0x28,
+        Rtcm = 0xF5
     };
 
     inline static constexpr uint16_t operator+(const MessageClass left, const uint8_t right) {
@@ -77,6 +78,11 @@ namespace UBLOX {
             case MessageClass::Hnr:
                 stream << "Hnr";
                 break;
+            case MessageClass::Rtcm:
+                stream << "Rtcm";
+                break;
+            default:
+                stream << "UNKNOWN";
         }
         return stream;
     }
@@ -238,6 +244,32 @@ namespace UBLOX {
 
         // Firmware Update Messages
 
+        // RTCM Messages
+        Rtcm1001 = MessageClass::Rtcm + 0x01,
+        Rtcm1002 = MessageClass::Rtcm + 0x02,
+        Rtcm1003 = MessageClass::Rtcm + 0x03,
+        Rtcm1004 = MessageClass::Rtcm + 0x04,
+        Rtcm1005 = MessageClass::Rtcm + 0x05,
+        Rtcm1006 = MessageClass::Rtcm + 0x06,
+        Rtcm1007 = MessageClass::Rtcm + 0x07,
+        Rtcm1009 = MessageClass::Rtcm + 0x09,
+        Rtcm1010 = MessageClass::Rtcm + 0x0A,
+        Rtcm1011 = MessageClass::Rtcm + 0xA1,
+        Rtcm1012 = MessageClass::Rtcm + 0xA2,
+        Rtcm1033 = MessageClass::Rtcm + 0x21,
+        Rtcm1074 = MessageClass::Rtcm + 0x4A,
+        Rtcm1075 = MessageClass::Rtcm + 0x4B,
+        Rtcm1077 = MessageClass::Rtcm + 0x4D,
+        Rtcm1084 = MessageClass::Rtcm + 0x54,
+        Rtcm1085 = MessageClass::Rtcm + 0x55,
+        Rtcm1087 = MessageClass::Rtcm + 0x57,
+        Rtcm1094 = MessageClass::Rtcm + 0x5E,
+        Rtcm1095 = MessageClass::Rtcm + 0x5F,
+        Rtcm1097 = MessageClass::Rtcm + 0x61,
+        Rtcm1124 = MessageClass::Rtcm + 0x7C,
+        Rtcm1125 = MessageClass::Rtcm + 0x7D,
+        Rtcm1127 = MessageClass::Rtcm + 0x7F,
+        Rtcm1230 = MessageClass::Rtcm + 0xE6
     };
 
     inline static constexpr uint8_t toRawClass(const Message message) {

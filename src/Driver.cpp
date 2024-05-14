@@ -23,7 +23,6 @@ Driver::Driver(Config configuration)
         SPDLOG_WARN("Failed to send USB config packet.");
 
     //Configure the RTCM port for RTK
-    //TODO(rtk): finish this
     switch (config.device.type) {
         case Driver::Type::Base:
             if (!sendPacket(UBLOX::Packet::Cfg::UART(
@@ -32,6 +31,24 @@ Driver::Driver(Config configuration)
                         toRaw(config.port.newSetRate), UBLOX::Packet::Cfg::Port::InProtocol::None,
                         UBLOX::Packet::Cfg::Port::OutProtocol::Rtcm3, false)))
                 SPDLOG_WARN("Failed to send UART config packet for UART2.");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1005,
+                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1005.");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1074,
+                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1074.");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1084,
+                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1084.");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1094,
+                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1094.");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1124,
+                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1124.");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1230,
+                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1230.");
             if (!sendPacket(UBLOX::Packet::Cfg::TimeMode(20 * 60, 3000 * 10)))
                 SPDLOG_WARN("Failed to send time mode config packet for survey-in.");
             break;
@@ -44,6 +61,8 @@ Driver::Driver(Config configuration)
                 SPDLOG_WARN("Failed to send UART config packet for UART2.");
             if (!sendPacket(UBLOX::Packet::Cfg::DifferentialGNSS(UBLOX::Packet::Cfg::DifferentialGNSS::Mode::RtkFixed)))
                 SPDLOG_WARN("Failed to send differential GNSS config packet.");
+            if (!sendPacket(UBLOX::Packet::Cfg::TimeMode()))
+                SPDLOG_WARN("Failed to send time mode config packet for survey-in.");
             break;
         default:
             break;
