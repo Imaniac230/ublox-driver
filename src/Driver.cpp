@@ -222,15 +222,15 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
                 if (!status.toData()) SPDLOG_WARN("Could not parse raw data to differential correction input status.");
                 SPDLOG_INFO("Differential correction message parsed:");
                 std::cout << "\tRxmDifferentialCorrectionInputStatus:" << std::endl;
-                std::cout << "status: " << status.getData().status << ", type" << status.getData().type
-                          << ", sub type: " << status.getData().subType << std::endl;
+                std::cout << "status: " << status.getData().status << ", type: " << status.getData().type
+                          << ", subtype: " << status.getData().subType << std::endl;
             } break;
             case UBLOX::Message::RxmRtcmInputStatus: {
                 UBLOX::Packet::Rxm::RTCMStatus status(std::move(p));
                 if (!status.toData()) SPDLOG_WARN("Could not parse raw data to rtcm input status.");
                 SPDLOG_INFO("RTCM message parsed:");
                 std::cout << "\tRxmRtcmInputStatus:" << std::endl;
-                std::cout << "status: " << status.getData().status << ", sub type" << status.getData().subType
+                std::cout << "status: " << status.getData().status << ", subtype: " << status.getData().subType
                           << ", base id: " << status.getData().referenceStationId << std::endl;
             } break;
             case UBLOX::Message::AckAcknowledged: {

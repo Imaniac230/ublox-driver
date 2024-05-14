@@ -290,15 +290,18 @@ std::ostream &operator<<(std::ostream &stream,
         default:
             stream << "UNSUPPORTED PROTOCOL";
     }
-    stream << ", error: " << status.error << ", used: " << status.used << ", corection id: " << status.correctionId
-           << ", type " << (status.typeValid ? "VALID" : "INVALID") << ", sub type "
-           << (status.subTypeValid ? "VALID" : "INVALID")
+    stream << ", error: " << static_cast<UBLOX::Packet::Rxm::StatusFlag>(status.error)
+           << ", used: " << static_cast<UBLOX::Packet::Rxm::StatusFlag>(status.used)
+           << ", correction id: " << status.correctionId << ", type " << (status.typeValid ? "VALID" : "INVALID")
+           << ", sub type " << (status.subTypeValid ? "VALID" : "INVALID")
            << ", input handling support: " << (status.inputHandlingSupported ? "YES" : "NO")
-           << ", encrypted: " << status.encrypted << ", decrypted: " << status.decrypted << " }";
+           << ", encrypted: " << static_cast<UBLOX::Packet::Rxm::StatusFlag>(status.encrypted)
+           << ", decrypted: " << static_cast<UBLOX::Packet::Rxm::StatusFlag>(status.decrypted) << " }";
     return stream;
 }
 
 std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Rxm::RTCMStatus::Data::Status &status) {
-    stream << "{ crc " << (status.crcFailed ? "FAILED" : "OK") << ", used: " << status.used << " }";
+    stream << "{ crc " << (status.crcFailed ? "FAILED" : "OK")
+           << ", used: " << static_cast<UBLOX::Packet::Rxm::StatusFlag>(status.used) << " }";
     return stream;
 }
