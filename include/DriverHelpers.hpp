@@ -19,6 +19,7 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Mon::GNSSInf
 std::ostream &operator<<(std::ostream &stream,
                          const UBLOX::Packet::Rxm::DifferentialCorrectionsStatus::Data::Status &status);
 std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Rxm::RTCMStatus::Data::Status &status);
+std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::RelativePositionNED::Data::Flags &flags);
 
 std::string flagsStr(uint8_t flags);
 

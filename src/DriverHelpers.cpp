@@ -305,3 +305,28 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Rxm::RTCMSta
            << ", used: " << static_cast<UBLOX::Packet::Rxm::StatusFlag>(status.used) << " }";
     return stream;
 }
+
+std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::RelativePositionNED::Data::Flags &flags) {
+    stream << "{ fix " << (flags.gnssFixValid ? "VALID" : "NOT VALID") << ", differential corrections "
+           << (flags.differentialCorrectionsApplied ? "APPLIED" : "NOT APPLIED") << ", data and baseline "
+           << (flags.dataAndBaselineValid ? "VALID" : "INVALID") << ", carrier phase range solution: ";
+    switch (static_cast<UBLOX::Packet::Nav::RelativePositionNED::Data::CarrierPhaseRangeSolutionStatus>(
+            flags.carrierPhaseRangeSolutionStatus)) {
+        case UBLOX::Packet::Nav::RelativePositionNED::Data::CarrierPhaseRangeSolutionStatus::NoSolution:
+            stream << "NoSolution";
+            break;
+        case UBLOX::Packet::Nav::RelativePositionNED::Data::CarrierPhaseRangeSolutionStatus::WithFloatingAmbiguities:
+            stream << "WithFloatingAmbiguities";
+            break;
+        case UBLOX::Packet::Nav::RelativePositionNED::Data::CarrierPhaseRangeSolutionStatus::WithFixedAmbiguities:
+            stream << "WithFixedAmbiguities";
+            break;
+        default:
+            stream << "UNKNOWN STATUS";
+    }
+    stream << ", is moving base: " << (flags.isMovingBase ? "YES" : "NO")
+           << ", ref. pos. used for moving base: " << (flags.referencePositionUsedForMovingBase ? "YES" : "NO")
+           << ", ref. observ. used for moving base: " << (flags.referenceObservationsUsedForMovingBase ? "YES" : "NO")
+           << ", vector heading " << (flags.vectorHeadingValid ? "VALID" : "INVALID")
+           << ", all vector components normalized: " << (flags.vectorComponentsNormalized ? "YES" : "NO") << " }";
+}

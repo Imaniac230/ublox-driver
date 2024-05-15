@@ -50,7 +50,14 @@ Driver::Driver(Config configuration)
             if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1230,
                                                             UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
                 SPDLOG_WARN("Failed to send message rate config packet for rtcm 1230.");
-            if (!sendPacket(UBLOX::Packet::Cfg::TimeMode(3 * 60, 50000 * 10)))
+            //            if (!sendPacket(UBLOX::Packet::Cfg::TimeMode(3 * 60, 60000 * 10)))
+            //                SPDLOG_WARN("Failed to send time mode config packet for survey-in.");
+            if (!sendPacket(UBLOX::Packet::Cfg::TimeMode(
+                        UBLOX::Packet::Cfg::TimeMode::PositionECEFOrLLA{.XOrLatitude = 400015427,
+                                                                        .YOrLongitude = 119062747,
+                                                                        .ZOrAltitude = 480733765,
+                                                                        .accuracy = 33220 * 10},
+                        UBLOX::Packet::Cfg::TimeMode::HighPrecisionPositionECEFOrLLA{})))
                 SPDLOG_WARN("Failed to send time mode config packet for survey-in.");
             break;
         case Driver::Type::Rover:
@@ -112,6 +119,8 @@ void Driver::configureExampleData() const {
         SPDLOG_WARN("Failed to send message rate packet for survey-in data.");
     if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSatelliteInformation, 10)))
         SPDLOG_WARN("Failed to send message rate packet for satellite information.");
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavRelativePositioningInformation, 10)))
+        SPDLOG_WARN("Failed to send message rate packet for relative positioning information.");
 
     //Poll message once
     if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::MonReceiverAndSoftwareVersion)))
@@ -216,6 +225,30 @@ void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
                 std::cout << "supported: " << info.getData().supportedGnss
                           << ", default: " << info.getData().defaultGnss << ", enabled: " << info.getData().enabledGnss
                           << std::endl;
+            } break;
+            case UBLOX::Message::NavRelativePositioningInformation: {
+                UBLOX::Packet::Nav::RelativePositionNED info(std::move(p));
+                if (!info.toData()) SPDLOG_WARN("Could not parse raw data to relative positioning information.");
+                std::cout << "\tNavRelativePositioningInformation:" << std::endl;
+                std::cout << "iTOW: " << info.getData().iTOWTimestampMillis
+                          << " ms, base id: " << info.getData().referenceStationId
+                          << ", north: " << info.getData().northCm << " cm, east: " << info.getData().eastCm
+                          << " cm, down: " << info.getData().downCm
+                          << " cm, vector length: " << info.getData().vectorLengthCm
+                          << " cm, vector heading: " << static_cast<float>(info.getData().vectorHeading) * 1e-5
+                          << " deg, north HP: " << static_cast<float>(info.getData().highPrecisionNorth) * 0.01
+                          << " cm, east HP: " << static_cast<float>(info.getData().highPrecisionEast) * 0.01
+                          << " cm, down HP: " << static_cast<float>(info.getData().highPrecisionDown) * 0.01
+                          << " cm, vector length HP: "
+                          << static_cast<float>(info.getData().highPrecisionVectorLength) * 0.01
+                          << " cm, north accuracy: " << static_cast<float>(info.getData().accuracyNorth) * 0.01
+                          << " cm, east accuracy: " << static_cast<float>(info.getData().accuracyEast) * 0.01
+                          << " cm, down accuracy: " << static_cast<float>(info.getData().accuracyDown) * 0.01
+                          << " cm, vector length accuracy: "
+                          << static_cast<float>(info.getData().accuracyVectorLength) * 0.01
+                          << " cm, vector heading accuracy: "
+                          << static_cast<float>(info.getData().accuracyVectorHeading) * 1e-5
+                          << " deg, flags: " << info.getData().flags << std::endl;
             } break;
             case UBLOX::Message::RxmDifferentialCorrectionInputStatus: {
                 UBLOX::Packet::Rxm::DifferentialCorrectionsStatus status(std::move(p));

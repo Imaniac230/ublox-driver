@@ -128,7 +128,7 @@ namespace UBLOX::Packet::Nav {
                 WeekNumberValid = 0x04,
                 TimeOfWeekValid = 0x08,
             };
-            enum class MapMatchingStatus {
+            enum class MapMatchingStatus : uint8_t {
                 None = 0,
                 ValidNotUsed = 1,
                 ValidUsed = 2,
@@ -140,19 +140,19 @@ namespace UBLOX::Packet::Nav {
                 uint8_t reserved : 4 = 0;
                 uint8_t mapMatchingStatus : 2 = static_cast<uint8_t>(MapMatchingStatus::None);
             };
-            enum class PowerSaveModeState {
+            enum class PowerSaveModeState : uint8_t {
                 AcquisitionOrDisabled = 0,
                 Tracking = 1,
                 PowerOptimizedTracking = 2,
                 Inactive = 3
             };
-            enum class SpoofingDetectionState {
+            enum class SpoofingDetectionState : uint8_t {
                 UnknownOrDeactivated = 0,
                 NoSpoofing = 1,
                 Spoofing = 2,
                 MultipleSpoofing = 3
             };
-            enum class CarrierPhaseRangeSolutionStatus {
+            enum class CarrierPhaseRangeSolutionStatus : uint8_t {
                 NoSolution = 0,
                 WithFloatingAmbiguities = 1,
                 WithFixedAmbiguities = 2
@@ -216,11 +216,11 @@ namespace UBLOX::Packet::Nav {
             int32_t meanXEcefCm = 0;
             int32_t meanYEcefCm = 0;
             int32_t meanZEcefCm = 0;
-            int8_t meanHighPrecisionXEcef = 0;//given in 0.1 of mm -> meanXEcefCm + (0.01 * meanHighPrecisionXEcef)
-            int8_t meanHighPrecisionYEcef = 0;//given in 0.1 of mm -> meanYEcefCm + (0.01 * meanHighPrecisionYEcef)
-            int8_t meanHighPrecisionZEcef = 0;//given in 0.1 of mm -> meanZEcefCm + (0.01 * meanHighPrecisionZEcef)
+            int8_t meanHighPrecisionXEcef = 0;//mm = * 0.1 -> meanXEcefCm + (0.01 * meanHighPrecisionXEcef)
+            int8_t meanHighPrecisionYEcef = 0;//mm = * 0.1 -> meanYEcefCm + (0.01 * meanHighPrecisionYEcef)
+            int8_t meanHighPrecisionZEcef = 0;//mm = * 0.1 -> meanZEcefCm + (0.01 * meanHighPrecisionZEcef)
             //1 byte (uint8_t) reserved
-            uint32_t meanPositionAccuracy = 0;//given in 0.1 of mm
+            uint32_t meanPositionAccuracy = 0;//mm = * 0.1
             uint32_t numberOfUsedObservations = 0;
             bool valid = false;
             bool inProgress = false;
@@ -359,6 +359,90 @@ namespace UBLOX::Packet::Nav {
                 data.satellites.end()->flags = *reinterpret_cast<const Data::Satellite::Flags *>(&flags);
                 offset += sizeof(uint32_t);
             }
+            return true;
+        }
+        [[nodiscard]] inline const Data &getData() const { return data; }
+
+    private:
+        Data data{};
+    };
+
+    class RelativePositionNED : public Base {
+    public:
+        static constexpr Message MESSAGE = Message::NavRelativePositioningInformation;
+        struct Data {
+            enum class CarrierPhaseRangeSolutionStatus : uint8_t {
+                NoSolution = 0,
+                WithFloatingAmbiguities = 1,
+                WithFixedAmbiguities = 2
+            };
+            struct __attribute__((__packed__)) __attribute__((aligned(1))) Flags {
+                uint32_t gnssFixValid : 1 = 0;
+                uint32_t differentialCorrectionsApplied : 1 = 0;
+                uint32_t dataAndBaselineValid : 1 = 0;
+                uint32_t carrierPhaseRangeSolutionStatus : 2 =
+                        static_cast<uint8_t>(CarrierPhaseRangeSolutionStatus::NoSolution);
+                uint32_t isMovingBase : 1 = 0;
+                uint32_t referencePositionUsedForMovingBase : 1 = 0;
+                uint32_t referenceObservationsUsedForMovingBase : 1 = 0;
+                uint32_t vectorHeadingValid : 1 = 0;
+                uint32_t vectorComponentsNormalized : 1 = 0;
+            };
+
+            uint8_t version = 0x01;
+            //1 byte (uint8_1) reserved
+            uint16_t referenceStationId = 0;
+            uint32_t iTOWTimestampMillis = 0;
+            int32_t northCm = 0;
+            int32_t eastCm = 0;
+            int32_t downCm = 0;
+            int32_t vectorLengthCm = 0;
+            int32_t vectorHeading = 0;// degree = * 1e-5
+            //4 bytes (uint8_t) reserved
+            int8_t highPrecisionNorth = 0;       //mm = * 0.1 -> northCm + (0.01 * highPrecisionNorth)
+            int8_t highPrecisionEast = 0;        //mm = * 0.1 -> eastCm + (0.01 * highPrecisionEast)
+            int8_t highPrecisionDown = 0;        //mm = * 0.1 -> downCm + (0.01 * highPrecisionDown)
+            int8_t highPrecisionVectorLength = 0;//mm = * 0.1 -> vectorLengthCm + (0.01 * highPrecisionVectorLength)
+            uint32_t accuracyNorth = 0;          //mm = * 0.1
+            uint32_t accuracyEast = 0;           //mm = * 0.1
+            uint32_t accuracyDown = 0;           //mm = * 0.1
+            uint32_t accuracyVectorLength = 0;   //mm = * 0.1
+            uint32_t accuracyVectorHeading = 0;  //degree = * 1e-5
+            //4 bytes (uint8_t) reserved
+            Flags flags{};
+        };
+
+        explicit RelativePositionNED(Base &&raw) : Base(std::move(raw)) {}
+
+        [[nodiscard]] inline bool toData() {
+            if (message() != MESSAGE) return false;
+
+            const std::vector<uint8_t> raw = rawData();
+            uint16_t offset = 0;
+            data = Data{
+                    .version = Serde::deserializeLEInt<uint8_t>(&raw[offset]),
+                    .referenceStationId = Serde::deserializeLEInt<uint16_t>(
+                            &raw[offset += sizeof(uint8_t) + sizeof(uint8_t)]),//NOTE: must skip 1 reserved byte
+                    .iTOWTimestampMillis = Serde::deserializeLEInt<uint32_t>(&raw[offset += sizeof(uint16_t)]),
+                    .northCm = Serde::deserializeLEInt<int32_t>(&raw[offset += sizeof(uint32_t)]),
+                    .eastCm = Serde::deserializeLEInt<int32_t>(&raw[offset += sizeof(int32_t)]),
+                    .downCm = Serde::deserializeLEInt<int32_t>(&raw[offset += sizeof(int32_t)]),
+                    .vectorLengthCm = Serde::deserializeLEInt<int32_t>(&raw[offset += sizeof(int32_t)]),
+                    .vectorHeading = Serde::deserializeLEInt<int32_t>(&raw[offset += sizeof(int32_t)]),
+                    .highPrecisionNorth = Serde::deserializeLEInt<int8_t>(
+                            &raw[offset += sizeof(int32_t) + 4 * sizeof(uint8_t)]),//NOTE: must skip 4 reserved bytes
+                    .highPrecisionEast = Serde::deserializeLEInt<int8_t>(&raw[offset += sizeof(int8_t)]),
+                    .highPrecisionDown = Serde::deserializeLEInt<int8_t>(&raw[offset += sizeof(int8_t)]),
+                    .highPrecisionVectorLength = Serde::deserializeLEInt<int8_t>(&raw[offset += sizeof(int8_t)]),
+                    .accuracyNorth = Serde::deserializeLEInt<uint32_t>(&raw[offset += sizeof(int8_t)]),
+                    .accuracyEast = Serde::deserializeLEInt<uint32_t>(&raw[offset += sizeof(uint32_t)]),
+                    .accuracyDown = Serde::deserializeLEInt<uint32_t>(&raw[offset += sizeof(uint32_t)]),
+                    .accuracyVectorLength = Serde::deserializeLEInt<uint32_t>(&raw[offset += sizeof(uint32_t)]),
+                    .accuracyVectorHeading = Serde::deserializeLEInt<uint32_t>(&raw[offset += sizeof(uint32_t)]),
+            };
+            const auto flags = Serde::deserializeLEInt<uint32_t>(
+                    &raw[offset += sizeof(uint32_t) + 4 * sizeof(uint8_t)]);//NOTE: must skip 4 reserved bytes
+            data.flags = *reinterpret_cast<const Data::Flags *>(&flags);
             return true;
         }
         [[nodiscard]] inline const Data &getData() const { return data; }

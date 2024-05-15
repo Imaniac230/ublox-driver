@@ -188,15 +188,15 @@ namespace UBLOX::Packet::Cfg {
     public:
         enum class Mode : uint8_t { Disabled = 0, SurveyIn = 1, Fixed = 2 };
         struct PositionECEFOrLLA {
-            int32_t XOrLatitude = 0; //cm or degree * 1e-7
-            int32_t YOrLongitude = 0;//cm or degree * 1e-7
-            int32_t ZOrAltitude = 0; //cm or degree * 1e-7
-            uint32_t accuracy = 0;   //0.1 of mm
+            int32_t XOrLatitude = 0; //cm or degree = * 1e-7
+            int32_t YOrLongitude = 0;//cm or degree = * 1e-7
+            int32_t ZOrAltitude = 0; //cm or degree = * 1e-7
+            uint32_t accuracy = 0;   // mm = * 0.1
         };
         struct HighPrecisionPositionECEFOrLLA {
-            int8_t XOrLatitude = 0; //0.1 of mm or degree * 1e-9
-            int8_t YOrLongitude = 0;//0.1 of mm or degree * 1e-9
-            int8_t ZOrAltitude = 0; //0.1 of mm or degree * 1e-9
+            int8_t XOrLatitude = 0; //mm = * 0.1 or degree = * 1e-9
+            int8_t YOrLongitude = 0;//mm = * 0.1 or degree = * 1e-9
+            int8_t ZOrAltitude = 0; //mm = * 0.1 or degree = * 1e-9
         };
 
         TimeMode()
@@ -285,7 +285,7 @@ namespace UBLOX::Packet::Cfg {
                     0x00,
                     0x00}) {}
 
-        TimeMode(const uint32_t minimumDurationSecs, const uint32_t positionAccuracyLimit /*0.1 of mm*/)
+        TimeMode(const uint32_t minimumDurationSecs, const uint32_t positionAccuracyLimit /*mm = * 0.1*/)
             : Base(Message::CfgTimeMode3, {0x00,
                                            0x00,//reserved
                                            static_cast<uint8_t>(Mode::SurveyIn),
