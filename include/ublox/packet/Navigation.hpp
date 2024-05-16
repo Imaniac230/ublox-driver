@@ -387,6 +387,7 @@ namespace UBLOX::Packet::Nav {
                 uint32_t referenceObservationsUsedForMovingBase : 1 = 0;
                 uint32_t vectorHeadingValid : 1 = 0;
                 uint32_t vectorComponentsNormalized : 1 = 0;
+                uint32_t reserved = 0;
             };
 
             uint8_t version = 0x01;

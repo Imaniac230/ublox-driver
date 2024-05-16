@@ -329,4 +329,5 @@ std::ostream &operator<<(std::ostream &stream, const UBLOX::Packet::Nav::Relativ
            << ", ref. observ. used for moving base: " << (flags.referenceObservationsUsedForMovingBase ? "YES" : "NO")
            << ", vector heading " << (flags.vectorHeadingValid ? "VALID" : "INVALID")
            << ", all vector components normalized: " << (flags.vectorComponentsNormalized ? "YES" : "NO") << " }";
+    return stream;
 }

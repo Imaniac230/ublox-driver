@@ -50,7 +50,6 @@ SBAS;QZSS`
     ```
     mkdir -p build/ && cd build/ && cmake -G Ninja -DCMAKE_BUILD_TYPE=Release .. && ninja && cd ../ && ./build/ublox config.json
     ```
-   > NOTE: Release build is currently broken, compile with `-DCMAKE_BUILD_TYPE=Debug` instead.
 4. To build the libraries from source on the native machine add option `-DBUILD_LIBS=YES` to the `cmake` command.
 5. To cross-compile for `aarch64-linux-gnu`:
    1. Install the target toolchain: `sudo apt install binutils-aarch64-linux-gnu g++-aarch64-linux-gnu`.
