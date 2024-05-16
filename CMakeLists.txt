@@ -1,5 +1,15 @@
 # general
 cmake_minimum_required(VERSION 3.21)
+
+if (CROSS_COMPILE)
+    # build dependencies from source if cross-compiling
+    set(BUILD_LIBS YES)
+
+    #TODO(cross-build): can this be done more elegantly with just a single file (function with triplet name argument)?
+#    set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/arm-linux-gnueabihf.cmake)
+    set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/aarch64-linux-gnu.cmake)
+endif ()
+
 project(Ublox)
 
 #set(BUILD_TESTS 1)
@@ -8,8 +18,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -ldl -fconcepts")
 
-find_package(spdlog REQUIRED)
-find_package(nlohmann_json REQUIRED)
+if (BUILD_LIBS)
+    add_subdirectory(libs)
+else ()
+    find_package(spdlog REQUIRED)
+    find_package(nlohmann_json REQUIRED)
+endif ()
 
 set(core_lib_name libublox)
 set(utils_lib_name libutils)

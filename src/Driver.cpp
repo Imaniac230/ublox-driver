@@ -121,11 +121,18 @@ void Driver::configureExampleData() const {
         SPDLOG_WARN("Failed to send message rate packet for satellite information.");
     if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavRelativePositioningInformation, 10)))
         SPDLOG_WARN("Failed to send message rate packet for relative positioning information.");
+    //Rxm messages don't output automatically, must also be enabled?
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::RxmDifferentialCorrectionInputStatus, 10)))
+        SPDLOG_WARN("Failed to send message rate packet for differential correction input status.");
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::RxmRtcmInputStatus, 10)))
+        SPDLOG_WARN("Failed to send message rate packet for rtcm input status.");
 
     //Poll message once
     if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::MonReceiverAndSoftwareVersion)))
         SPDLOG_WARN("Failed to send polling packet for receiver and software version.");
     if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::MonGnssInformationMessage)))
+        SPDLOG_WARN("Failed to send polling packet for gnss information.");
+    if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::CfgGnss)))
         SPDLOG_WARN("Failed to send polling packet for gnss information.");
 }
 

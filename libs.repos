@@ -1,0 +1,9 @@
+repositories:
+  libs/spdlog:
+    type: git
+    url: https://github.com/gabime/spdlog.git
+    version: v1.x
+  libs/json:
+    type: git
+    url: https://github.com/nlohmann/json.git
+    version: develop
