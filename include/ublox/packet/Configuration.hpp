@@ -241,8 +241,8 @@ namespace UBLOX::Packet::Cfg {
                                            0x00,
                                            0x00}) {}
 
-        TimeMode(const PositionECEFOrLLA position, const HighPrecisionPositionECEFOrLLA highPrecisionPosition,
-                 const bool positionInLla = false)
+        explicit TimeMode(const PositionECEFOrLLA position, const bool positionInLla = false,
+                          const std::optional<HighPrecisionPositionECEFOrLLA> highPrecisionPosition = std::nullopt)
             : Base(Message::CfgTimeMode3,
                    {0x00,
                     0x00,//reserved
@@ -260,9 +260,9 @@ namespace UBLOX::Packet::Cfg {
                     Serde::serializeLEInt(position.ZOrAltitude)[1],
                     Serde::serializeLEInt(position.ZOrAltitude)[2],
                     Serde::serializeLEInt(position.ZOrAltitude)[3],
-                    static_cast<uint8_t>(highPrecisionPosition.XOrLatitude),
-                    static_cast<uint8_t>(highPrecisionPosition.YOrLongitude),
-                    static_cast<uint8_t>(highPrecisionPosition.ZOrAltitude),
+                    static_cast<uint8_t>(highPrecisionPosition.value_or(HighPrecisionPositionECEFOrLLA{}).XOrLatitude),
+                    static_cast<uint8_t>(highPrecisionPosition.value_or(HighPrecisionPositionECEFOrLLA{}).YOrLongitude),
+                    static_cast<uint8_t>(highPrecisionPosition.value_or(HighPrecisionPositionECEFOrLLA{}).ZOrAltitude),
                     0x00,//reserved
                     Serde::serializeLEInt(position.accuracy)[0],
                     Serde::serializeLEInt(position.accuracy)[1],

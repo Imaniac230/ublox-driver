@@ -23,64 +23,13 @@ Driver::Driver(Config configuration)
                                             UBLOX::Packet::Cfg::Port::OutProtocol::Ubx)))
         SPDLOG_WARN("Failed to send USB config packet.");
 
-    //Configure the RTCM port for RTK
-    switch (config.device.type) {
-        case Driver::Type::Base:
-            if (!sendPacket(UBLOX::Packet::Cfg::UART(
-                        UBLOX::Packet::Cfg::Port::UARTID::Uart2, UBLOX::Packet::Cfg::Port::CharLength::Bits8,
-                        UBLOX::Packet::Cfg::Port::Parity::None, UBLOX::Packet::Cfg::Port::StopBits::One,
-                        toRaw(config.port.newSetRate), UBLOX::Packet::Cfg::Port::InProtocol::None,
-                        UBLOX::Packet::Cfg::Port::OutProtocol::Rtcm3, false)))
-                SPDLOG_WARN("Failed to send UART config packet for UART2.");
-            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1005,
-                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
-                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1005.");
-            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1077,
-                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
-                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1077.");
-            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1087,
-                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
-                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1087.");
-            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1097,
-                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
-                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1097.");
-            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1127,
-                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
-                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1127.");
-            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1230,
-                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
-                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1230.");
-            //            if (!sendPacket(UBLOX::Packet::Cfg::TimeMode(3 * 60, 60000 * 10)))
-            //                SPDLOG_WARN("Failed to send time mode config packet for survey-in.");
-            if (!sendPacket(UBLOX::Packet::Cfg::TimeMode(
-                        UBLOX::Packet::Cfg::TimeMode::PositionECEFOrLLA{.XOrLatitude = 400015427,
-                                                                        .YOrLongitude = 119062747,
-                                                                        .ZOrAltitude = 480733765,
-                                                                        .accuracy = 33220 * 10},
-                        UBLOX::Packet::Cfg::TimeMode::HighPrecisionPositionECEFOrLLA{})))
-                SPDLOG_WARN("Failed to send time mode config packet for survey-in.");
-            break;
-        case Driver::Type::Rover:
-            if (!sendPacket(UBLOX::Packet::Cfg::UART(
-                        UBLOX::Packet::Cfg::Port::UARTID::Uart2, UBLOX::Packet::Cfg::Port::CharLength::Bits8,
-                        UBLOX::Packet::Cfg::Port::Parity::None, UBLOX::Packet::Cfg::Port::StopBits::One,
-                        toRaw(config.port.newSetRate), UBLOX::Packet::Cfg::Port::InProtocol::Rtcm3,
-                        UBLOX::Packet::Cfg::Port::OutProtocol::None, false)))
-                SPDLOG_WARN("Failed to send UART config packet for UART2.");
-            if (!sendPacket(UBLOX::Packet::Cfg::DifferentialGNSS(UBLOX::Packet::Cfg::DifferentialGNSS::Mode::RtkFixed)))
-                SPDLOG_WARN("Failed to send differential GNSS config packet.");
-            if (!sendPacket(UBLOX::Packet::Cfg::TimeMode()))
-                SPDLOG_WARN("Failed to send time mode config packet for survey-in.");
-            break;
-        default:
-            break;
-    }
+    if (!configureRtkDevice()) SPDLOG_INFO("RTK was not configured.");
 
     //Configure rate
     if (!sendPacket(UBLOX::Packet::Cfg::NavigationRate(25, 3, UBLOX::Packet::Cfg::NavigationRate::TimeReference::Utc)))
         SPDLOG_WARN("Failed to send measurement and navigation rate configuration packet.");
 
-    configureExampleData();
+    configureOutputData();
 
     //Receive data
     while (errno != EINTR) {
@@ -88,7 +37,7 @@ Driver::Driver(Config configuration)
         if (packets.empty()) {
             SPDLOG_WARN("No packets received.");
         } else {
-            printExampleData(std::move(packets));
+            printOutputData(std::move(packets));
         }
     }
 }
@@ -105,27 +54,123 @@ Driver::Config Driver::Config::fromJson(const std::string &path) {
     return cfg;
 }
 
-void Driver::configureExampleData() const {
+bool Driver::configureRtkDevice() const {
+    switch (config.device.type) {
+        case Driver::Type::Base:
+            if (!sendPacket(UBLOX::Packet::Cfg::UART(
+                        UBLOX::Packet::Cfg::Port::UARTID::Uart2, UBLOX::Packet::Cfg::Port::CharLength::Bits8,
+                        UBLOX::Packet::Cfg::Port::Parity::None, UBLOX::Packet::Cfg::Port::StopBits::One,
+                        toRaw(config.device.rtcmRate), UBLOX::Packet::Cfg::Port::InProtocol::None,
+                        UBLOX::Packet::Cfg::Port::OutProtocol::Rtcm3, false)))
+                SPDLOG_WARN("Failed to send UART config packet for UART2.");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1005,
+                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1005.");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::Rtcm1230,
+                                                            UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm 1230.");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(
+                        (config.device.base.observationType == ObservationMessage::Msm7) ? UBLOX::Message::Rtcm1077
+                                                                                         : UBLOX::Message::Rtcm1074,
+                        UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm {}.",
+                            (config.device.base.observationType == ObservationMessage::Msm7) ? "1077" : "1074");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(
+                        (config.device.base.observationType == ObservationMessage::Msm7) ? UBLOX::Message::Rtcm1087
+                                                                                         : UBLOX::Message::Rtcm1084,
+                        UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm {}.",
+                            (config.device.base.observationType == ObservationMessage::Msm7) ? "1087" : "1084");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(
+                        (config.device.base.observationType == ObservationMessage::Msm7) ? UBLOX::Message::Rtcm1097
+                                                                                         : UBLOX::Message::Rtcm1094,
+                        UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm {}.",
+                            (config.device.base.observationType == ObservationMessage::Msm7) ? "1097" : "1094");
+            if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(
+                        (config.device.base.observationType == ObservationMessage::Msm7) ? UBLOX::Message::Rtcm1127
+                                                                                         : UBLOX::Message::Rtcm1124,
+                        UBLOX::Packet::Cfg::MessageRate::Rates{.uart2 = 1})))
+                SPDLOG_WARN("Failed to send message rate config packet for rtcm {}.",
+                            (config.device.base.observationType == ObservationMessage::Msm7) ? "1127" : "1124");
+            switch (config.device.base.positionMode) {
+                case BasePositionMode::SurveyIn:
+                    if (!sendPacket(UBLOX::Packet::Cfg::TimeMode(config.device.base.surveyIn.minimumDurationSecs,
+                                                                 config.device.base.surveyIn.accuracyLimitMm * 10)))
+                        SPDLOG_WARN("Failed to send time mode config packet for survey-in.");
+                    break;
+                case BasePositionMode::Fixed:
+                    if (!sendPacket(UBLOX::Packet::Cfg::TimeMode(
+                                UBLOX::Packet::Cfg::TimeMode::PositionECEFOrLLA{
+                                        .XOrLatitude =
+                                                static_cast<int32_t>(config.device.base.fixedPosition.latitude * 1e7),
+                                        .YOrLongitude =
+                                                static_cast<int32_t>(config.device.base.fixedPosition.longitude * 1e7),
+                                        .ZOrAltitude =
+                                                static_cast<int32_t>(config.device.base.fixedPosition.altitude * 1e7),
+                                        .accuracy = config.device.base.fixedPosition.accuracyMm * 10},
+                                true,
+                                //TODO: verify float precision behavior (23.0 -> 23.000000000010 -> 10)
+                                UBLOX::Packet::Cfg::TimeMode::HighPrecisionPositionECEFOrLLA{
+                                        .XOrLatitude = static_cast<int8_t>(
+                                                static_cast<int64_t>(config.device.base.fixedPosition.latitude * 1e9) %
+                                                100),
+                                        .YOrLongitude = static_cast<int8_t>(
+                                                static_cast<int64_t>(config.device.base.fixedPosition.longitude * 1e9) %
+                                                100),
+                                        .ZOrAltitude = static_cast<int8_t>(
+                                                static_cast<int64_t>(config.device.base.fixedPosition.altitude * 1e9) %
+                                                100)})))
+                        SPDLOG_WARN("Failed to send time mode config packet for fixed position.");
+                    break;
+                case BasePositionMode::Rover:
+                    SPDLOG_ERROR(
+                            "Rover-mode position acquisition for base is currently NOT supported, time mode not set.");
+                    return false;
+            }
+            break;
+        case Driver::Type::Rover:
+            if (!sendPacket(UBLOX::Packet::Cfg::UART(
+                        UBLOX::Packet::Cfg::Port::UARTID::Uart2, UBLOX::Packet::Cfg::Port::CharLength::Bits8,
+                        UBLOX::Packet::Cfg::Port::Parity::None, UBLOX::Packet::Cfg::Port::StopBits::One,
+                        toRaw(config.device.rtcmRate), UBLOX::Packet::Cfg::Port::InProtocol::Rtcm3,
+                        UBLOX::Packet::Cfg::Port::OutProtocol::None, false)))
+                SPDLOG_WARN("Failed to send UART config packet for UART2.");
+            if (!sendPacket(UBLOX::Packet::Cfg::DifferentialGNSS(UBLOX::Packet::Cfg::DifferentialGNSS::Mode::RtkFixed)))
+                SPDLOG_WARN("Failed to send differential GNSS config packet.");
+            break;
+        default:
+            return false;
+    }
+
+    return true;
+}
+
+void Driver::configureOutputData() const {
     //Configure periodic messages
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSurveyInData, 10)))
+        SPDLOG_WARN("Failed to send message rate packet for survey-in data.");
     if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavEcefPositionSolution, 10)))
         SPDLOG_WARN("Failed to send message rate config packet for ECEF position.");
     if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavGeodeticPositionSolution, 10)))
         SPDLOG_WARN("Failed to send message rate config packet for geodetic position.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavOdometerSolution, 10)))
-        SPDLOG_WARN("Failed to send message rate packet for odometer.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavReceiverNavigationStatus, 10)))
-        SPDLOG_WARN("Failed to send message rate packet for navigation status.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSurveyInData, 10)))
-        SPDLOG_WARN("Failed to send message rate packet for survey-in data.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSatelliteInformation, 10)))
-        SPDLOG_WARN("Failed to send message rate packet for satellite information.");
     if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavRelativePositioningInformation, 10)))
         SPDLOG_WARN("Failed to send message rate packet for relative positioning information.");
-    //Rxm messages don't output automatically, must also be enabled?
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::RxmDifferentialCorrectionInputStatus, 10)))
-        SPDLOG_WARN("Failed to send message rate packet for differential correction input status.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::RxmRtcmInputStatus, 10)))
-        SPDLOG_WARN("Failed to send message rate packet for rtcm input status.");
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavReceiverNavigationStatus, 10)))
+        SPDLOG_WARN("Failed to send message rate packet for navigation status.");
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavOdometerSolution, 10)))
+        SPDLOG_WARN("Failed to send message rate packet for odometer.");
+    if (config.debug.satelliteInformation) {
+        if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSatelliteInformation, 10)))
+            SPDLOG_WARN("Failed to send message rate packet for satellite information.");
+    }
+    if (config.debug.correctionDataInput) {
+        //Rxm messages don't output automatically, must also be enabled?
+        if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::RxmDifferentialCorrectionInputStatus, 10)))
+            SPDLOG_WARN("Failed to send message rate packet for differential correction input status.");
+        if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::RxmRtcmInputStatus, 10)))
+            SPDLOG_WARN("Failed to send message rate packet for rtcm input status.");
+    }
 
     //Poll message once
     if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::MonReceiverAndSoftwareVersion)))
@@ -136,7 +181,7 @@ void Driver::configureExampleData() const {
         SPDLOG_WARN("Failed to send polling packet for gnss information.");
 }
 
-void Driver::printExampleData(std::list<UBLOX::Packet::Base> packets) {
+void Driver::printOutputData(std::list<UBLOX::Packet::Base> packets) {
     for (auto &p: std::move(packets)) {
         switch (p.message()) {
             case UBLOX::Message::NavEcefPositionSolution: {

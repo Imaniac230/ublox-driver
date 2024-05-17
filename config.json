@@ -5,6 +5,25 @@
     "newSetRate": "Baud115200"
   },
   "device": {
-    "type": "None"
+    "type": "None",
+    "rtcmRate": "Baud115200",
+    "base": {
+      "observationMessageType": "Msm7",
+      "positionMode": "SurveyIn",
+      "surveyIn": {
+        "minimumDurationSeconds": 180,
+        "accuracyLimitMm": 1000
+      },
+      "fixedPosition": {
+        "latitude": 0,
+        "longitude": 0,
+        "altitude": 0,
+        "accuracyMm": 0
+      }
+    }
+  },
+  "debug": {
+    "satelliteInformation": true,
+    "correctionDataInput": true
   }
 }
