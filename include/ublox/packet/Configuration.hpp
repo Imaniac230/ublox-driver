@@ -327,6 +327,73 @@ namespace UBLOX::Packet::Cfg {
                                            0x00,
                                            0x00}) {}
     };
+
+    class ResetAndClearBackup : public Base {
+    public:
+        enum class ClearModePreset : uint16_t { HotStart = 0x0000, WarmStart = 0x0001, ColdStart = 0xFFFF };
+        enum class ResetMode : uint8_t {
+            HardwareImmediate = 0x00,
+            ControlledSoftware = 0x01,
+            GnssOnly = 0x02,
+            HardwareAfterShutdown = 0x04,
+            ControlledGnssStop = 0x08,
+            ControlledGnssStart = 0x09
+        };
+        struct __attribute__((__packed__)) __attribute__((aligned(1))) ClearMode {
+            uint16_t ephemeris : 1 = 0;
+            uint16_t almanac : 1 = 0;
+            uint16_t health : 1 = 0;
+            uint16_t klobucharParameters : 1 = 0;
+            uint16_t position : 1 = 0;
+            uint16_t clockDrift : 1 = 0;
+            uint16_t oscillator : 1 = 0;
+            uint16_t utc : 1 = 0;
+            uint16_t rtc : 1 = 0;
+            uint16_t sfdrAndWeakSignalCompensationEstimates : 1 = 0;
+            uint16_t sfdrVehicleMonitoring : 1 = 0;
+            uint16_t tct : 1 = 0;
+            uint16_t autonomousOrbit : 1 = 0;
+            uint16_t reserved = 0;
+        };
+
+        explicit ResetAndClearBackup(const ClearMode clearMode,
+                                     const ResetMode resetMode = ResetMode::HardwareImmediate)
+            : Base(Message::CfgResetReceiver,
+                   {Serde::serializeLEInt(*reinterpret_cast<const uint16_t *>(&clearMode))[0],
+                    Serde::serializeLEInt(*reinterpret_cast<const uint16_t *>(&clearMode))[1],
+                    static_cast<uint8_t>(resetMode), 0x00 /*1 byte reserved*/}) {}
+
+        explicit ResetAndClearBackup(const ClearModePreset clearMode = ClearModePreset::ColdStart,
+                                     const ResetMode resetMode = ResetMode::HardwareImmediate)
+            : ResetAndClearBackup(*reinterpret_cast<const ClearMode *>(&clearMode), resetMode) {}
+    };
+
+    class ClearSaveLoad : public Base {
+    public:
+        enum class Mode : uint8_t { Clear, Save, Load };
+
+        //NOTE: ignoring memory device optional group - will always operate on BBR and Flash
+        //NOTE: any set bit in each uint32_t value should trigger the action, but we're setting all just in case
+        //        explicit ClearSaveLoad(const Mode mode)
+        //            : Base(Message::CfgClearSaveLoad,
+        //                   {static_cast<uint8_t>((mode == Mode::Clear) ? 0x01 : 0x00), 0x00, 0x00, 0x00,
+        //                    static_cast<uint8_t>((mode == Mode::Save) ? 0x01 : 0x00), 0x00, 0x00, 0x00,
+        //                    static_cast<uint8_t>((mode == Mode::Load) ? 0x01 : 0x00), 0x00, 0x00, 0x00}) {}
+        explicit ClearSaveLoad(const Mode mode)
+            : Base(Message::CfgClearSaveLoad,
+                   {Serde::serializeLEInt<uint32_t>((mode == Mode::Clear) ? 0xFFFFFFFF : 0x00000000)[0],
+                    Serde::serializeLEInt<uint32_t>((mode == Mode::Clear) ? 0xFFFFFFFF : 0x00000000)[1],
+                    Serde::serializeLEInt<uint32_t>((mode == Mode::Clear) ? 0xFFFFFFFF : 0x00000000)[2],
+                    Serde::serializeLEInt<uint32_t>((mode == Mode::Clear) ? 0xFFFFFFFF : 0x00000000)[3],
+                    Serde::serializeLEInt<uint32_t>((mode == Mode::Save) ? 0xFFFFFFFF : 0x00000000)[0],
+                    Serde::serializeLEInt<uint32_t>((mode == Mode::Save) ? 0xFFFFFFFF : 0x00000000)[1],
+                    Serde::serializeLEInt<uint32_t>((mode == Mode::Save) ? 0xFFFFFFFF : 0x00000000)[2],
+                    Serde::serializeLEInt<uint32_t>((mode == Mode::Save) ? 0xFFFFFFFF : 0x00000000)[3],
+                    Serde::serializeLEInt<uint32_t>((mode == Mode::Load) ? 0xFFFFFFFF : 0x00000000)[0],
+                    Serde::serializeLEInt<uint32_t>((mode == Mode::Load) ? 0xFFFFFFFF : 0x00000000)[1],
+                    Serde::serializeLEInt<uint32_t>((mode == Mode::Load) ? 0xFFFFFFFF : 0x00000000)[2],
+                    Serde::serializeLEInt<uint32_t>((mode == Mode::Load) ? 0xFFFFFFFF : 0x00000000)[3]}) {}
+    };
 }// namespace UBLOX::Packet::Cfg
 //[[deprecated]];// namespace UBLOX::Packet::Cfg
 

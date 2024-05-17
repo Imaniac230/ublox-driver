@@ -21,10 +21,11 @@ namespace UBLOX {
         [[nodiscard]] bool sendPacket(const Packet::Base &packet) const;
         [[nodiscard]] std::list<Packet::Base> receivePackets();
 
+        void disconnect() { serial.close(); }
         void reconnect(const std::string &path, const Serial::BaudRate rate) {
             //FIXME(dtor): can't rely on the destructor here and instead must manually close the old port before assignment,
             // destructor would actually close the new port (called on the new instance??)
-            serial.close();
+            disconnect();
             serial = Serial(path, rate, 5);
         }
 

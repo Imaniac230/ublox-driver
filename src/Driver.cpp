@@ -11,6 +11,23 @@
 
 Driver::Driver(Config configuration)
     : UBLOX::Device(configuration.port.path, configuration.port.rate), config(std::move(configuration)) {
+    if (config.resetDevice) {
+        //Clear all saved configurations and reset the device
+        if (!sendPacket(UBLOX::Packet::Cfg::ClearSaveLoad(UBLOX::Packet::Cfg::ClearSaveLoad::Mode::Clear)))
+            SPDLOG_WARN("Failed to send clear configuration packet.");
+        if (!sendPacket(UBLOX::Packet::Cfg::ResetAndClearBackup(
+                    UBLOX::Packet::Cfg::ResetAndClearBackup::ClearModePreset::ColdStart,
+                    UBLOX::Packet::Cfg::ResetAndClearBackup::ResetMode::ControlledSoftware)))
+            SPDLOG_WARN("Failed to send reset and clear backup configuration packet.");
+        disconnect();
+        SPDLOG_INFO("Performed device reset, exiting.");
+        return;
+    }
+
+    //Clear any currently active configuration
+    if (!sendPacket(UBLOX::Packet::Cfg::ClearSaveLoad(UBLOX::Packet::Cfg::ClearSaveLoad::Mode::Load)))
+        SPDLOG_WARN("Failed to send load configuration packet.");
+
     //Configure communication ports
     if (!sendPacket(UBLOX::Packet::Cfg::UART(
                 UBLOX::Packet::Cfg::Port::UARTID::Uart1, UBLOX::Packet::Cfg::Port::CharLength::Bits8,
@@ -30,6 +47,11 @@ Driver::Driver(Config configuration)
         SPDLOG_WARN("Failed to send measurement and navigation rate configuration packet.");
 
     configureOutputData();
+
+    if (config.saveDeviceConfiguration) {
+        if (!sendPacket(UBLOX::Packet::Cfg::ClearSaveLoad(UBLOX::Packet::Cfg::ClearSaveLoad::Mode::Save)))
+            SPDLOG_WARN("Failed to send save configuration packet.");
+    }
 
     //Receive data
     while (errno != EINTR) {
@@ -177,6 +199,7 @@ void Driver::configureOutputData() const {
         SPDLOG_WARN("Failed to send polling packet for receiver and software version.");
     if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::MonGnssInformationMessage)))
         SPDLOG_WARN("Failed to send polling packet for gnss information.");
+    //TODO: parse this in data output
     if (!sendPacket(UBLOX::Packet::Base(UBLOX::Message::CfgGnss)))
         SPDLOG_WARN("Failed to send polling packet for gnss information.");
 }

@@ -59,6 +59,8 @@ public:
             friend void from_json(const nlohmann::json &j, Driver::Config::Debug &d);
         };
 
+        bool resetDevice = false;
+        bool saveDeviceConfiguration = false;
         Port port{};
         Device device{};
         Debug debug{};
@@ -114,6 +116,8 @@ inline void from_json(const nlohmann::json &j, Driver::Config::Debug &d) {
 }
 
 inline void from_json(const nlohmann::json &j, Driver::Config &c) {
+    j.at("resetDevice").get_to(c.resetDevice);
+    j.at("saveDeviceConfiguration").get_to(c.saveDeviceConfiguration);
     j.at("port").get_to(c.port);
     j.at("device").get_to(c.device);
     j.at("debug").get_to(c.debug);

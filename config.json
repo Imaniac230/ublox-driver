@@ -1,4 +1,6 @@
 {
+  "resetDevice": false,
+  "saveDeviceConfiguration": false,
   "port": {
     "path": "/dev/ttyACM0",
     "rate": "Baud38400",
