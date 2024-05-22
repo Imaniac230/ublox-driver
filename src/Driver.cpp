@@ -58,6 +58,14 @@ Driver::Driver(Config configuration)
         std::list<UBLOX::Packet::Base> packets = receivePackets();
         if (packets.empty()) {
             SPDLOG_WARN("No packets received.");
+            ++receivingFailureCount;
+            if (receivingFailureCount > maxReceivingFailures) {
+                receivingFailureCount = 0;
+                SPDLOG_WARN("Attempting reconnection after 5 seconds.");
+                std::this_thread::sleep_for(std::chrono::seconds(5));
+                //NOTE: will throw if port is not available at this point
+                reconnect(config.port.path, config.port.newSetRate);
+            }
         } else {
             printOutputData(std::move(packets));
         }

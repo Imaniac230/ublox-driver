@@ -74,6 +74,9 @@ public:
 private:
     Config config;
 
+    uint8_t receivingFailureCount = 0;
+    static constexpr uint8_t maxReceivingFailures = 20;
+
     [[nodiscard]] bool configureRtkDevice() const;
     void configureOutputData() const;
     static void printOutputData(std::list<UBLOX::Packet::Base> data);
