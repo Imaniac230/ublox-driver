@@ -175,18 +175,24 @@ bool Driver::configureRtkDevice() const {
 
 void Driver::configureOutputData() const {
     //Configure periodic messages
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSurveyInData, 10)))
-        SPDLOG_WARN("Failed to send message rate packet for survey-in data.");
+    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavReceiverNavigationStatus, 10)))
+        SPDLOG_WARN("Failed to send message rate packet for navigation status.");
     if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavEcefPositionSolution, 10)))
         SPDLOG_WARN("Failed to send message rate config packet for ECEF position.");
     if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavGeodeticPositionSolution, 10)))
         SPDLOG_WARN("Failed to send message rate config packet for geodetic position.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavRelativePositioningInformation, 10)))
-        SPDLOG_WARN("Failed to send message rate packet for relative positioning information.");
-    if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavReceiverNavigationStatus, 10)))
-        SPDLOG_WARN("Failed to send message rate packet for navigation status.");
     if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavOdometerSolution, 10)))
         SPDLOG_WARN("Failed to send message rate packet for odometer.");
+
+    if (config.device.type == Type::Base) {
+        if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSurveyInData, 10)))
+            SPDLOG_WARN("Failed to send message rate packet for survey-in data.");
+    }
+    if (config.device.type == Type::Rover) {
+        if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavRelativePositioningInformation, 10)))
+            SPDLOG_WARN("Failed to send message rate packet for relative positioning information.");
+    }
+
     if (config.debug.satelliteInformation) {
         if (!sendPacket(UBLOX::Packet::Cfg::MessageRate(UBLOX::Message::NavSatelliteInformation, 10)))
             SPDLOG_WARN("Failed to send message rate packet for satellite information.");
