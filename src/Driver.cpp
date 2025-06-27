@@ -7,6 +7,10 @@
 #include <ublox/packet/Navigation.hpp>
 #include <ublox/packet/Receiver.hpp>
 
+//NOTE: Explicitly setting the compile-time level to the most permissive, desired constraint can then be overridden during runtime.
+#ifndef SPDLOG_ACTIVE_LEVEL
+#define SPDLOG_ACTIVE_LEVEL 0
+#endif
 #include <spdlog/spdlog.h>
 
 Driver::Driver(Config configuration)
@@ -129,30 +133,33 @@ bool Driver::configureRtkDevice() const {
                 case BasePositionMode::Fixed:
                     if (!sendPacket(UBLOX::Packet::Cfg::TimeMode(
                                 UBLOX::Packet::Cfg::TimeMode::PositionECEFOrLLA{
-                                        .XOrLatitude =
-                                                static_cast<int32_t>(config.device.base.fixedPosition.latitude * 1e7),
-                                        .YOrLongitude =
-                                                static_cast<int32_t>(config.device.base.fixedPosition.longitude * 1e7),
-                                        .ZOrAltitude =
-                                                static_cast<int32_t>(config.device.base.fixedPosition.altitude * 1e7),
+                                        .XOrLatitude = static_cast<int32_t>(
+                                                config.device.base.fixedPosition.latitudeDeg * 1e7),
+                                        .YOrLongitude = static_cast<int32_t>(
+                                                config.device.base.fixedPosition.longitudeDeg * 1e7),
+                                        .ZOrAltitude = static_cast<int32_t>(
+                                                config.device.base.fixedPosition.altitudeMeters * 100),
                                         .accuracy = config.device.base.fixedPosition.accuracyMm * 10},
                                 true,
                                 //TODO: verify float precision behavior (23.0 -> 23.000000000010 -> 10)
                                 UBLOX::Packet::Cfg::TimeMode::HighPrecisionPositionECEFOrLLA{
                                         .XOrLatitude = static_cast<int8_t>(
-                                                static_cast<int64_t>(config.device.base.fixedPosition.latitude * 1e9) %
+                                                static_cast<int64_t>(config.device.base.fixedPosition.latitudeDeg *
+                                                                     1e9) %
                                                 100),
                                         .YOrLongitude = static_cast<int8_t>(
-                                                static_cast<int64_t>(config.device.base.fixedPosition.longitude * 1e9) %
+                                                static_cast<int64_t>(config.device.base.fixedPosition.longitudeDeg *
+                                                                     1e9) %
                                                 100),
                                         .ZOrAltitude = static_cast<int8_t>(
-                                                static_cast<int64_t>(config.device.base.fixedPosition.altitude * 1e9) %
+                                                static_cast<int64_t>(config.device.base.fixedPosition.altitudeMeters *
+                                                                     1000 * 10) %
                                                 100)})))
                         SPDLOG_WARN("Failed to send time mode config packet for fixed position.");
                     break;
                 case BasePositionMode::Rover:
-                    SPDLOG_ERROR(
-                            "Rover-mode position acquisition for base is currently NOT supported, time mode not set.");
+                    SPDLOG_ERROR("Initial RTK Rover-mode position acquisition for base is currently NOT supported, "
+                                 "time mode not set.");
                     return false;
             }
             break;
@@ -360,6 +367,21 @@ void Driver::printOutputData(std::list<UBLOX::Packet::Base> packets) {
                 const std::vector<uint8_t> data = p.rawData();
                 SPDLOG_ERROR("Message {} NOT acknowledged.", UBLOX::asStr(UBLOX::toMessage(data[0], data[1])));
             } break;
+            case UBLOX::Message::InfNotice:
+                SPDLOG_INFO("Message from firmware: {}.", p.rawData().data());
+                break;
+            case UBLOX::Message::InfWarning:
+                SPDLOG_WARN("Message from firmware: {}.", p.rawData().data());
+                break;
+            case UBLOX::Message::InfError:
+                SPDLOG_ERROR("Message from firmware: {}.", p.rawData().data());
+                break;
+            case UBLOX::Message::InfDebug:
+                SPDLOG_DEBUG("Message from firmware: {}.", p.rawData().data());
+                break;
+            case UBLOX::Message::InfTest:
+                SPDLOG_TRACE("Message from firmware: {}.", p.rawData().data());
+                break;
             default: {
                 std::cout << "unknown message: " << p.message() << ", DATA: {" << std::hex;
                 for (const auto &d: p.rawData()) { std::cout << "0x" << static_cast<int>(d) << ", "; }

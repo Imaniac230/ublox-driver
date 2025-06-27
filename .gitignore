@@ -2,4 +2,5 @@
 .vscode/
 
 cmake-*/
+vscode-build/
 build/

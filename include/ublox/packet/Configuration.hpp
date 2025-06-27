@@ -190,13 +190,13 @@ namespace UBLOX::Packet::Cfg {
         struct PositionECEFOrLLA {
             int32_t XOrLatitude = 0; //cm or degree = * 1e-7
             int32_t YOrLongitude = 0;//cm or degree = * 1e-7
-            int32_t ZOrAltitude = 0; //cm or degree = * 1e-7
+            int32_t ZOrAltitude = 0; //cm
             uint32_t accuracy = 0;   // mm = * 0.1
         };
         struct HighPrecisionPositionECEFOrLLA {
             int8_t XOrLatitude = 0; //mm = * 0.1 or degree = * 1e-9
             int8_t YOrLongitude = 0;//mm = * 0.1 or degree = * 1e-9
-            int8_t ZOrAltitude = 0; //mm = * 0.1 or degree = * 1e-9
+            int8_t ZOrAltitude = 0; //mm = * 0.1
         };
 
         TimeMode()

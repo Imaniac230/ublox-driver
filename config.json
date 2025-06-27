@@ -17,9 +17,9 @@
         "accuracyLimitMm": 1000
       },
       "fixedPosition": {
-        "latitude": 0,
-        "longitude": 0,
-        "altitude": 0,
+        "latitudeDeg": 0.0,
+        "longitudeDeg": 0.0,
+        "altitudeMeters": 0.0,
         "accuracyMm": 0
       }
     }

@@ -30,9 +30,9 @@ public:
                     friend void from_json(const nlohmann::json &j, Driver::Config::Device::Base::SurveyIn &s);
                 };
                 struct FixedPosition {
-                    double latitude = 0.0f;
-                    double longitude = 0.0f;
-                    double altitude = 0.0f;
+                    double latitudeDeg = 0.0;
+                    double longitudeDeg = 0.0;
+                    double altitudeMeters = 0.0;
                     uint32_t accuracyMm = 0;
 
                     friend void from_json(const nlohmann::json &j, Driver::Config::Device::Base::FixedPosition &f);
@@ -107,9 +107,9 @@ inline void from_json(const nlohmann::json &j, Driver::Config::Device::Base::Sur
 }
 
 inline void from_json(const nlohmann::json &j, Driver::Config::Device::Base::FixedPosition &f) {
-    j.at("latitude").get_to(f.latitude);
-    j.at("longitude").get_to(f.longitude);
-    j.at("altitude").get_to(f.altitude);
+    j.at("latitudeDeg").get_to(f.latitudeDeg);
+    j.at("longitudeDeg").get_to(f.longitudeDeg);
+    j.at("altitudeMeters").get_to(f.altitudeMeters);
     j.at("accuracyMm").get_to(f.accuracyMm);
 }
 

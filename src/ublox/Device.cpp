@@ -3,6 +3,10 @@
 #include <ublox/Device.hpp>
 #include <util/Serde.hpp>
 
+//NOTE: Explicitly setting the compile-time level to the most permissive, desired constraint can then be overridden during runtime.
+#ifndef SPDLOG_ACTIVE_LEVEL
+#define SPDLOG_ACTIVE_LEVEL 0
+#endif
 #include <spdlog/spdlog.h>
 
 bool UBLOX::Device::sendPacket(const Packet::Base &packet) const {
