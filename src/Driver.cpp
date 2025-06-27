@@ -368,19 +368,19 @@ void Driver::printOutputData(std::list<UBLOX::Packet::Base> packets) {
                 SPDLOG_ERROR("Message {} NOT acknowledged.", UBLOX::asStr(UBLOX::toMessage(data[0], data[1])));
             } break;
             case UBLOX::Message::InfNotice:
-                SPDLOG_INFO("Message from firmware: {}.", p.rawData().data());
+                SPDLOG_INFO("Message from firmware: {}.", reinterpret_cast<const char *>(p.rawData().data()));
                 break;
             case UBLOX::Message::InfWarning:
-                SPDLOG_WARN("Message from firmware: {}.", p.rawData().data());
+                SPDLOG_WARN("Message from firmware: {}.", reinterpret_cast<const char *>(p.rawData().data()));
                 break;
             case UBLOX::Message::InfError:
-                SPDLOG_ERROR("Message from firmware: {}.", p.rawData().data());
+                SPDLOG_ERROR("Message from firmware: {}.", reinterpret_cast<const char *>(p.rawData().data()));
                 break;
             case UBLOX::Message::InfDebug:
-                SPDLOG_DEBUG("Message from firmware: {}.", p.rawData().data());
+                SPDLOG_DEBUG("Message from firmware: {}.", reinterpret_cast<const char *>(p.rawData().data()));
                 break;
             case UBLOX::Message::InfTest:
-                SPDLOG_TRACE("Message from firmware: {}.", p.rawData().data());
+                SPDLOG_TRACE("Message from firmware: {}.", reinterpret_cast<const char *>(p.rawData().data()));
                 break;
             default: {
                 std::cout << "unknown message: " << p.message() << ", DATA: {" << std::hex;
