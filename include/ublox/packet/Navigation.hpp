@@ -356,7 +356,7 @@ namespace UBLOX::Packet::Nav {
                         .azimuthDeg = Serde::deserializeLEInt<int16_t>(&raw[offset += sizeof(int8_t)]),
                         .pseudorangeResidualDm = Serde::deserializeLEInt<int16_t>(&raw[offset += sizeof(int16_t)])});
                 const auto flags = Serde::deserializeLEInt<uint32_t>(&raw[offset += sizeof(int16_t)]);
-                data.satellites.end()->flags = *reinterpret_cast<const Data::Satellite::Flags *>(&flags);
+                data.satellites.back().flags = *reinterpret_cast<const Data::Satellite::Flags *>(&flags);
                 offset += sizeof(uint32_t);
             }
             return true;
